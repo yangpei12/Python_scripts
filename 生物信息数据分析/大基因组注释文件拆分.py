@@ -5,31 +5,35 @@
 # @ SoftWare    : PyCharm
 
 import os
+import math
 
 os.chdir(r'E:\售后')
-check_point = 1061200
 
-# 首先输出gtf文件的各个基因的区间位置，可根据位置，然后检测切分点是否位于基因内部
-output_buffer = open('gene_pos_info.txt', 'a')
-with open('gtf_150.txt', 'r') as input_file:
-    for line in input_file.readlines():
-        gene_info = line.split('\t')
-        gene_start_pos = int(gene_info[3])
-        gene_end_pos = int(gene_info[4])
-        gene_range = list(range(gene_start_pos, gene_end_pos))
-        gene_id = gene_info[8].split(';')[0]
-        gene_feature = gene_info[2]
-        if gene_feature == 'gene' or gene_feature == 'transcript':
-            gene_pos_info = '{0}\t{1}\t{2}\n'.format(gene_info[0], gene_start_pos, gene_end_pos)
-            output_buffer.write(gene_pos_info)
+class GtfSplit:
+    # gtf_file:gtf文件名字，chromosome：染色体号
+    def __init__(self, gtf_file, step, length):
+        self.gtf_file = gtf_file
+        self.step = step
+        self.length = length
 
-        if check_point in gene_range:
-            print(gene_id)
-            break
-        else:
-            gene_info[0] = '{0}_{1}:{2}'.format(gene_info[0], 0, check_point)
-            print(gene_info)
+    # 读取gtf文件，按照染色体号将基因区间打印出来
+    def gene_pos_info(self, output_file, chromosome):
+        gtf_buffer = open(output_file,'a')
+        # 将注释文件中的位置先打印出来，可根据每个基因的位置进行切割位点的设定
+        with open(self.gtf_file, 'r') as input_file:
+            for lines in input_file.readlines():
+                gene_info = lines.split('\t')
+                gene_start_pos = int(gene_info[3])
+                gene_end_pos = int(gene_info[4])
+                if gene_info[0] == chromosome:
+                    frequency = math.ceil(self.length / self.step)
+                    str_slice = map(lambda x: [self.step * x, self.step * (x + 1)], range(0, frequency))
+                    for tmp in str_slice:
+                        if gene_start_pos >= tmp[0] and gene_end_pos <= tmp[1]:
+                            gene_info[0] = '{0}_{1}:{2}'.format(gene_info[0], tmp[0], tmp[1])
+                            gtf_buffer.writelines(gene_info)
 
 
-
-
+if __name__ == "__main__":
+    gtf = GtfSplit('gtf_150.txt', 800000, 1100000)
+    gtf.gene_pos_info('genome_splitd.gtf', 'chr1')
