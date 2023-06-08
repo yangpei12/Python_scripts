@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @ Time    : 2023/4/4 23:23
-# @ Author  : pyang
-# @ Contact : 695819143@qq.com
-# @ SoftWare    : PyCharm
-
 import os
 import math
 
@@ -14,8 +8,7 @@ class GenomeSplit:
     # 输入单个染色体,形式为“chr1”,参数更新后，self.chromosome_file = chromosome_file重新声明
     def __init__(self, chromosome):
         self.chromosome = chromosome
-        chromosome_file = '{}.fa'.format(self.chromosome)
-        self.chromosome_file = chromosome_file
+        self.chromosome_file = '{}.fa'.format(self.chromosome)
 
     # 按照染色体将序列进行整合成一条长序列
     def seq_integration(self, file):
@@ -50,9 +43,7 @@ class GenomeSplit:
                         output1.write('{0}\n'.format(line[tmp[0]:tmp[1]]))
 
 
-if __name__ == "__main__":
-    chr1_seq = GenomeSplit('chr3')
-    chr1_seq.seq_integration('genome.fa')
-    chr1_seq.seq_length()
-    chr1_seq.split_seq(60, chr1_seq.seq_length())
-
+chr1_seq = GenomeSplit('chr1')
+chr1_seq.seq_integration('genome.fa')
+chr1_seq.seq_length()
+chr1_seq.split_seq(40, chr1_seq.seq_length())
