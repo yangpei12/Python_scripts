@@ -59,27 +59,25 @@ cleanDataStat = pd.concat(cleanDataInfoResult.values)
 
 # ========================== 3. 相关性读取代码 ==========================
 def sampleCor(group_name):
-    if os.path.exists('Output/merged_result/correlation_cluster.txt'):
-        corData = pd.read_csv('Output/merged_result/correlation_cluster.txt', sep='\t', index_col=0)
-        colData = corData.filter(like=group_name, axis=1)
-        rowData = colData.filter(like=group_name, axis=0)
+    corData = pd.read_csv('Output/merged_result/correlation_cluster.txt', sep='\t', index_col=0)
+    colData = corData.filter(like=group_name, axis=1)
+    rowData = colData.filter(like=group_name, axis=0)
 
-        # 按照样本筛选每个样本与其他样本的相关性
-        sampleData = rowData.columns.map(lambda x: ';'.join(rowData.loc[:, x].values.astype(str)))
-        sampleCorInfoResult = pd.DataFrame(sampleData, index=rowData.columns, columns=['CorrelationOfSample'])
-        return sampleCorInfoResult
-    else:
-        sampleCorInfoResult = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'CorrelationOfSample': None})
-        return sampleCorInfoResult
+    # 按照样本筛选每个样本与其他样本的相关性
+    sampleData = rowData.columns.map(lambda x: ';'.join(rowData.loc[:, x].values.astype(str)))
+    sampleCorInfoResult = pd.DataFrame(sampleData, index=rowData.columns, columns=['CorrelationOfSample'])
+    return sampleCorInfoResult
 
 
 # 相关性输出
 # samples.iloc[:,3]选取比较组列
-groups = samples.iloc[:,3].unique() # 经过unique后数据类型转换为了array
-sampleCorResult = pd.Series(groups).map(sampleCor) # 使用Series函数转换后才能使用map
-CorrelationData = pd.concat(sampleCorResult.values)
-CorrelationData['Sample'] = CorrelationData.index
-#print(CorrelationData)
+if os.path.exists('Output/merged_result/correlation_cluster.txt'):
+    groups = samples.iloc[:,3].unique() # 经过unique后数据类型转换为了array
+    sampleCorResult = pd.Series(groups).map(sampleCor) # 使用Series函数转换后才能使用map
+    CorrelationData = pd.concat(sampleCorResult.values)
+    CorrelationData['Sample'] = CorrelationData.index
+else:
+    CorrelationData = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'CorrelationOfSample': None})
 
 
 # ========================== 4. 读取stat_out文件 ====================================
