@@ -9,23 +9,24 @@ import subprocess
 import sys
 import re
 # 输入工作路径
-os.chdir(r'D:\文档\售后\ref')
+os.chdir(r'E:\售后\refRNA')
 
 # ========================== 1. 读取样本信息 ==========================
 samples = pd.read_table('project_info/01_samples.txt')
-projectInfo = samples.iloc[:, [1,2]]
+projectInfo = samples.iloc[:, [1, 2]]
 projectInfo.columns = ['文库名称', 'Sample']
 # 输出样本信息
 #print(projectInfo)
 
-
+# 输出样本信息
+# print(projectInfo)
 # ========================== 2. 读取短片段和接头比例 ==========================
 def cleanDataInfo(sample):
     dics = {}
     patternOne = re.compile(r'  Read 1 with adapter:\s+.+\s+(.+%)')
     patternTwo = re.compile(r'  Read 2 with adapter:\s+.+\s+(.+%)')
     patternThree = re.compile(r'Pairs that were too short:\s+.+\s+(.+%)')
-    cleanDataPath = r'{0}\{1}\{2}_delete_adapter.summary'.format('CleanData',sample,sample)
+    cleanDataPath = r'{0}\{1}\{2}_delete_adapter.summary'.format('CleanData', sample, sample)
     if os.path.exists(cleanDataPath):
         with open(cleanDataPath, 'r') as input_buffez:
             dics['Sample'] = sample
@@ -33,53 +34,51 @@ def cleanDataInfo(sample):
                 matchedOne = patternOne.search(line.strip('\n'))
                 if matchedOne:
                     adapterOneRatio = matchedOne.group(1)
-                    dics['Read1WithAdapter']= [adapterOneRatio.strip('(')]
+                    dics['Read1WithAdapter'] = [adapterOneRatio.strip('(')]
 
                 matchedTwo = patternTwo.search(line.strip('\n'))
                 if matchedTwo:
                     adapterTwoRatio = matchedTwo.group(1)
-                    dics['Read2WithAdapter']= [adapterTwoRatio.strip('(')]
+                    dics['Read2WithAdapter'] = [adapterTwoRatio.strip('(')]
 
                 matchedThree = patternThree.search(line.strip('\n'))
                 if matchedThree:
-                    shortSeqRatio= matchedThree.group(1)
+                    shortSeqRatio = matchedThree.group(1)
                     dics['PairsThatWereTooShort'] = [shortSeqRatio.strip('(')]
         df_merge = pd.DataFrame(dics)
         return df_merge
     else:
-        df_merge = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'Read1WithAdapter': None,
+        df_merge = pd.DataFrame({'Sample': [sample], 'Read1WithAdapter': None,
                                  'Read2WithAdapter': None, 'PairsThatWereTooShort': None})
         return df_merge
+
 
 # cleandata信息读取输出
 sampleInfo = samples.iloc[:, 2]
 cleanDataInfoResult = sampleInfo.map(cleanDataInfo)
 cleanDataStat = pd.concat(cleanDataInfoResult.values)
-#print(cleanDataStat)
 
 # ========================== 3. 相关性读取代码 ==========================
 def sampleCor(group_name):
-    if os.path.exists('Output/merged_result/correlation_cluster.txt'):
-        corData = pd.read_csv('Output/merged_result/correlation_cluster.txt', sep='\t', index_col=0)
-        colData = corData.filter(like=group_name, axis=1)
-        rowData = colData.filter(like=group_name, axis=0)
+    corData = pd.read_csv('Output/merged_result/correlation_cluster.txt', sep='\t', index_col=0)
+    colData = corData.filter(like=group_name, axis=1)
+    rowData = colData.filter(like=group_name, axis=0)
 
-        # 按照样本筛选每个样本与其他样本的相关性
-        sampleData = rowData.columns.map(lambda x: ';'.join(rowData.loc[:, x].values.astype(str)))
-        sampleCorInfoResult = pd.DataFrame(sampleData, index=rowData.columns, columns=['CorrelationOfSample'])
-        return sampleCorInfoResult
-    else:
-        sampleCorInfoResult = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'CorrelationOfSample': None})
-        return sampleCorInfoResult
+    # 按照样本筛选每个样本与其他样本的相关性
+    sampleData = rowData.columns.map(lambda x: ';'.join(rowData.loc[:, x].values.astype(str)))
+    sampleCorInfoResult = pd.DataFrame(sampleData, index=rowData.columns, columns=['CorrelationOfSample'])
+    return sampleCorInfoResult
 
 
 # 相关性输出
 # samples.iloc[:,3]选取比较组列
-groups = samples.iloc[:,3].unique() # 经过unique后数据类型转换为了array
-sampleCorResult = pd.Series(groups).map(sampleCor) # 使用Series函数转换后才能使用map
-CorrelationData = pd.concat(sampleCorResult.values)
-CorrelationData['Sample'] = CorrelationData.index
-#print(CorrelationData)
+if os.path.exists('Output/merged_result/correlation_cluster.txt'):
+    groups = samples.iloc[:,3].unique() # 经过unique后数据类型转换为了array
+    sampleCorResult = pd.Series(groups).map(sampleCor) # 使用Series函数转换后才能使用map
+    CorrelationData = pd.concat(sampleCorResult.values)
+    CorrelationData['Sample'] = CorrelationData.index
+else:
+    CorrelationData = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'CorrelationOfSample': None})
 
 
 # ========================== 4. 读取stat_out文件 ====================================
@@ -132,7 +131,7 @@ def item_info():
     if os.path.exists('project_info/04_report.txt'):
         reportData = pd.read_csv('project_info/04_report.txt', sep='\t', header=None, index_col=0)
         itemNum = reportData.loc['LCB_项目编号', 1]
-        itemPath = sys.argv[1]
+        #itemPath = sys.argv[1]
         itemInfo = pd.DataFrame({'Sample': samples.iloc[:, 2], '项目编号': itemNum, '项目路径': 'none'})
         return itemInfo
     else:
@@ -145,4 +144,4 @@ allDataOut = pd.DataFrame({'Sample': samples.iloc[:, 2]})
 for tmp in [projectInfo, cleanDataStat, CorrelationData, statOutData,
             mappedStatData, regionData, itemInfoData]:
     allDataOut = pd.merge(allDataOut, tmp, on='Sample')
-print(allDataOut)
+allDataOut.to_csv('check_data.txt', sep='\t', index=False)
