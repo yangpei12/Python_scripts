@@ -8,18 +8,17 @@ import pandas as pd
 import subprocess
 import sys
 import re
+
 # 输入工作路径
-os.chdir(r'E:\售后\refRNA')
+itemPath = r'E:\售后\refRNA'
+os.chdir(itemPath)
 
 # ========================== 1. 读取样本信息 ==========================
 samples = pd.read_table('project_info/01_samples.txt')
 projectInfo = samples.iloc[:, [1, 2]]
 projectInfo.columns = ['文库名称', 'Sample']
-# 输出样本信息
-#print(projectInfo)
 
-# 输出样本信息
-# print(projectInfo)
+
 # ========================== 2. 读取短片段和接头比例 ==========================
 def cleanDataInfo(sample):
     dics = {}
@@ -58,6 +57,7 @@ sampleInfo = samples.iloc[:, 2]
 cleanDataInfoResult = sampleInfo.map(cleanDataInfo)
 cleanDataStat = pd.concat(cleanDataInfoResult.values)
 
+
 # ========================== 3. 相关性读取代码 ==========================
 def sampleCor(group_name):
     corData = pd.read_csv('Output/merged_result/correlation_cluster.txt', sep='\t', index_col=0)
@@ -73,8 +73,8 @@ def sampleCor(group_name):
 # 相关性输出
 # samples.iloc[:,3]选取比较组列
 if os.path.exists('Output/merged_result/correlation_cluster.txt'):
-    groups = samples.iloc[:,3].unique() # 经过unique后数据类型转换为了array
-    sampleCorResult = pd.Series(groups).map(sampleCor) # 使用Series函数转换后才能使用map
+    groups = samples.iloc[:, 3].unique()  # 经过unique后数据类型转换为了array
+    sampleCorResult = pd.Series(groups).map(sampleCor)  # 使用Series函数转换后才能使用map
     CorrelationData = pd.concat(sampleCorResult.values)
     CorrelationData['Sample'] = CorrelationData.index
 else:
@@ -92,14 +92,17 @@ def stat_out():
         newstatData = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'RawData': None, 'CleanData': None,
                                     'Q20': None, 'Q30': None, 'GC': None})
         return newstatData
+
+
 # 输出stat_out文件
 statOutData = stat_out()
+
 
 # ========================== 5. 读取mapped_stat数据 ====================================
 # 读取mapped_stat数据
 def mapped_stat():
     if os.path.exists('Output/mapped_stat_out.txt'):
-        statData = pd.read_csv('Output/mapped_stat_out.txt', sep='\t',header=0)
+        statData = pd.read_csv('Output/mapped_stat_out.txt', sep='\t', header=0)
         selectData = statData.loc[:, ['Sample', 'Mapped reads', 'Unique Mapped reads', 'Multi Mapped reads']]
         selectData['Mappedreads'] = selectData['Mapped reads'].str.extract(r'([0-9]+.[0-9]+)%')
         selectData['UniqueMappedreads'] = selectData['Unique Mapped reads'].str.extract(r'([0-9]+.[0-9]+)%')
@@ -107,8 +110,11 @@ def mapped_stat():
         mapped_stat_result = selectData.loc[:, ['Sample', 'Mappedreads', 'UniqueMappedreads', 'MultiMappedreads']]
         return mapped_stat_result
     else:
-        mapped_stat_result = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'Mappedreads':None, 'UniqueMappedreads':None,'MultiMappedreads':None})
+        mapped_stat_result = pd.DataFrame(
+            {'Sample': projectInfo.iloc[:, 1], 'Mappedreads': None, 'UniqueMappedreads': None,
+             'MultiMappedreads': None})
         return mapped_stat_result
+
 
 mappedStatData = mapped_stat()
 
@@ -121,27 +127,34 @@ def mapped_region():
         regionDataTranspose['Sample'] = regionDataTranspose.index
         return regionDataTranspose
     else:
-        regionDataTranspose = pd.DataFrame({'Sample': projectInfo.iloc[:, 1], 'exon': None, 'intron': None, 'intergenic': None})
+        regionDataTranspose = pd.DataFrame(
+            {'Sample': projectInfo.iloc[:, 1], 'exon': None, 'intron': None, 'intergenic': None})
         return regionDataTranspose
+
+
 # 输出mapped_region
 regionData = mapped_region()
+
 
 # ========================== 7. 读取项目号及路径 ====================================
 def item_info():
     if os.path.exists('project_info/04_report.txt'):
         reportData = pd.read_csv('project_info/04_report.txt', sep='\t', header=None, index_col=0)
         itemNum = reportData.loc['LCB_项目编号', 1]
-        #itemPath = sys.argv[1]
-        itemInfo = pd.DataFrame({'Sample': samples.iloc[:, 2], '项目编号': itemNum, '项目路径': 'none'})
-        return itemInfo
+        itemInfo = pd.DataFrame({'Sample': samples.iloc[:, 2], '项目编号': itemNum, '项目路径': itemPath})
+        return itemInfo, itemNum
     else:
         itemInfo = pd.DataFrame({'Sample': samples.iloc[:, 2], '项目编号': None, '项目路径': None})
         return itemInfo
-itemInfoData = item_info()
+
+
+itemInfoData = item_info()[0]
+itemNumber = item_info()[1]
 
 # ========================== 将所有数据合并 ==========================
 allDataOut = pd.DataFrame({'Sample': samples.iloc[:, 2]})
+output_name = '{0}_check_data.txt'.format(itemNumber)
 for tmp in [projectInfo, cleanDataStat, CorrelationData, statOutData,
             mappedStatData, regionData, itemInfoData]:
     allDataOut = pd.merge(allDataOut, tmp, on='Sample')
-allDataOut.to_csv('check_data.txt', sep='\t', index=False)
+allDataOut.to_csv(output_name, sep='\t', index=False)
