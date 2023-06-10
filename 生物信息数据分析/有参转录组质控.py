@@ -5,7 +5,6 @@
 # @ SoftWare    :
 import os
 import pandas as pd
-import subprocess
 import sys
 import re
 
@@ -25,7 +24,7 @@ def cleanDataInfo(sample):
     patternOne = re.compile(r'  Read 1 with adapter:\s+.+\s+(.+%)')
     patternTwo = re.compile(r'  Read 2 with adapter:\s+.+\s+(.+%)')
     patternThree = re.compile(r'Pairs that were too short:\s+.+\s+(.+%)')
-    cleanDataPath = r'{0}\{1}\{2}_delete_adapter.summary'.format('CleanData', sample, sample)
+    cleanDataPath = r'{0}/{1}/{2}_delete_adapter.summary'.format('CleanData', sample, sample)
     if os.path.exists(cleanDataPath):
         with open(cleanDataPath, 'r') as input_buffez:
             dics['Sample'] = sample
