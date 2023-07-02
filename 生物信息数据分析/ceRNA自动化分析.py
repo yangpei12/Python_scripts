@@ -86,6 +86,6 @@ class Analysis_ceRNA:
         ceRNA_regulation = ceRNA_regulation.loc[:, ~ceRNA_regulation.columns.duplicated()]
         return ceRNA_regulation
 
-a = Analysis_ceRNA('lncRNA', 'mRNA')
+a = Analysis_ceRNA('circRNA', 'circRNA')
 result = a.concatenate_data(gene_id_col='TargetID', regulation_col='regulation')
-result.to_csv('result.csv')
+result.to_csv('result2.csv')
