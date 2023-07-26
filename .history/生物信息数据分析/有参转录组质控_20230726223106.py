@@ -170,29 +170,22 @@ itemNumber = item_info()[1]
 
 # ========================== 8. 读取链条特异性信息 =================================
 # 由于可以通过命令行进行数据读取更加方便，因此本模块使用subprogress模块
-# 将命令行以字符串的形式保存，然后使用subprocess.run运行代码
 def strand_info():
     cmd1 = "cut -f1 sample_info.txt | grep -v '#'"
     stdout = subprocess.run(cmd1, shell=True, capture_output=True, encoding='utf-8')
-    samples = stdout.stdout.rstrip('\n').split('\n')
-    strand_data = []
+    samples = stdout.split('\n') 
     for sample in samples:
         cmd2 = "grep '1+-,1-+,2++,2--' Output/{0}/RSeQC_result/{1}_Strand_specific.log".format(sample, sample)
         strand_cmd_out = subprocess.run(cmd2, shell=True, capture_output=True, encoding='utf-8')
         strand_specific_info = strand_cmd_out.stdout[-7:-1]
-        result = [sample, strand_specific_info]
-        strand_data.append(result)
-    strand_out = pd.DataFrame(strand_data,columns=['Sample', 'StrandInfo'])
-    return stat_out
+        print(strand_specific_info)
 
-# 输出链特异性信息
-strandInfo = strand_info()
 
 # ========================== 将所有数据合并 ==========================
 allDataOut = pd.DataFrame({'Sample': sample_info.iloc[:,0]})
 output_name = '{0}/{1}_data_stat.txt'.format(args.outDir, itemNumber)
 for tmp in [libInfo, cleanDataStat, CorrelationData, statOutData,
-            mappedStatData, regionData, itemInfoData, strandInfo]:
+            mappedStatData, regionData, itemInfoData]:
     allDataOut = pd.merge(allDataOut, tmp, on='Sample')
 allDataOut.to_csv(output_name, sep='\t', index=False)
 
