@@ -4,25 +4,12 @@
 # @ Contact : 695819143@qq.com
 # @ SoftWare    :
 import os
-import argparse
-import subprocess
 import pandas as pd
+import subprocess
+import sys
 import re
-# ========================== 创建命令行参数 =========================
-# 创建argparse对象
-parser = argparse.ArgumentParser(
-                    prog='DataCheck',
-                    description='This Program Is Checking Data Quality',
-                    epilog='Text at the bottom of help')
-# 添加参数
-parser.add_argument('workDir', help='please provide a work path')  # 工作路径
-parser.add_argument('outDir', help='please provide a path for output')  # 结果文件输出路径
-
-# 解析参数：
-args = parser.parse_args()
-
 # 输入工作路径
-itemPath = args.workDir
+itemPath = sys.argv[1]
 os.chdir(itemPath)
 
 # ========================== 1. 读取样本及文库信息 ==========================
@@ -168,31 +155,14 @@ def item_info():
 itemInfoData = item_info()[0]
 itemNumber = item_info()[1]
 
-# ========================== 8. 读取链条特异性信息 =================================
-# 由于可以通过命令行进行数据读取更加方便，因此本模块使用subprogress模块
-def strand_info():
-    # subprocess.run('{0} {1}.csv > {2}.txt'.format("sed 's/,/\t/g'",subdir, subdir),shell=True)
-    cmd1 = "cut -f1 sample_info.txt | grep -v '#'"
-    samples = subprocess.run(cmd1, shell=True)
-    cmd2 = "for sample in ${samples} do srand_info=`grep "1+-,1-+,2++,2--" ${path}/Output/${sample}/RSeQC_result/${sample}_Strand_specific.log`
-	echo -e ${sample}"\t"${srand_info:50:6}
-done"
-
 # ========================== 将所有数据合并 ==========================
 allDataOut = pd.DataFrame({'Sample': sample_info.iloc[:,0]})
-output_name = '{0}/{1}_data_stat.txt'.format(args.outDir, itemNumber)
+output_name = '/public23/4_After_Sales_Personal/YangPei/20.Script/Python_script/refRNA_stat/test/{0}_data_stat.txt'.format(itemNumber)
 for tmp in [libInfo, cleanDataStat, CorrelationData, statOutData,
             mappedStatData, regionData, itemInfoData]:
     allDataOut = pd.merge(allDataOut, tmp, on='Sample')
 allDataOut.to_csv(output_name, sep='\t', index=False)
 
-
-
-
-
-
-
-"""
 # ========================= 异常比例统计 ===========================
 # 定义各项目阈值
 read1_with_adapter_cutoff = 10
@@ -274,4 +244,4 @@ error_stat_out = pd.DataFrame([error_stat.iloc[0,:].map(f)])
 error_stat_out[[ 'SampleNum','合同号', '路径',]] = [len(allDataOut),itemNumber,itemPath]
 check_output = '/public23/4_After_Sales_Personal/YangPei/20.Script/Python_script/refRNA_stat/test/{0}_check_data.txt'.format(itemNumber)
 error_stat_out.to_csv(check_output, sep='\t', index=False)
-"""
+

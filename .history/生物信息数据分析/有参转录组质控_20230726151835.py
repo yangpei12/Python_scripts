@@ -5,7 +5,6 @@
 # @ SoftWare    :
 import os
 import argparse
-import subprocess
 import pandas as pd
 import re
 # ========================== 创建命令行参数 =========================
@@ -167,16 +166,6 @@ def item_info():
 
 itemInfoData = item_info()[0]
 itemNumber = item_info()[1]
-
-# ========================== 8. 读取链条特异性信息 =================================
-# 由于可以通过命令行进行数据读取更加方便，因此本模块使用subprogress模块
-def strand_info():
-    # subprocess.run('{0} {1}.csv > {2}.txt'.format("sed 's/,/\t/g'",subdir, subdir),shell=True)
-    cmd1 = "cut -f1 sample_info.txt | grep -v '#'"
-    samples = subprocess.run(cmd1, shell=True)
-    cmd2 = "for sample in ${samples} do srand_info=`grep "1+-,1-+,2++,2--" ${path}/Output/${sample}/RSeQC_result/${sample}_Strand_specific.log`
-	echo -e ${sample}"\t"${srand_info:50:6}
-done"
 
 # ========================== 将所有数据合并 ==========================
 allDataOut = pd.DataFrame({'Sample': sample_info.iloc[:,0]})
