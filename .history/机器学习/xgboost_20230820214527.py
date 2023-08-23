@@ -15,10 +15,8 @@ train, test = train_test_split(data)
  
 # 转换成Dmatrix格式
 feature_columns = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
-target_column = ['Outcome']
-train.columns = feature_columns + target_column
-test.columns = feature_columns + target_column
-
+target_column = 'Outcome'
+ 
 # 取出Dataframe的numpy数组值去初始化DMatrix对象
 xgtrain = xgb.DMatrix(train[feature_columns].values, train[target_column].values)
 xgtest = xgb.DMatrix(test[feature_columns].values, test[target_column].values)

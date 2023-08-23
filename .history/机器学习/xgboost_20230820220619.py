@@ -15,7 +15,7 @@ train, test = train_test_split(data)
  
 # 转换成Dmatrix格式
 feature_columns = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
-target_column = ['Outcome']
+target_column = 'Outcome'
 train.columns = feature_columns + target_column
 test.columns = feature_columns + target_column
 
