@@ -22,7 +22,7 @@ X_train, X_test, y_train, y_test = train_test_split(data_feature, data_label, te
 model = XGBClassifier(gamma=0)
 
 
-param_grid = {'learning_rate': [0.3], 'n_estimators': [10], 'max_depth': [5,10,15], 'min_child_weight': [1]}
+param_grid = {'learning_rate': [0.01], 'n_estimators': [300,400,500], 'max_depth': [5,10,15], 'min_child_weight': [1]}
 
 
 

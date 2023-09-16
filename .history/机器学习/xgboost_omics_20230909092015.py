@@ -22,13 +22,13 @@ X_train, X_test, y_train, y_test = train_test_split(data_feature, data_label, te
 model = XGBClassifier(gamma=0)
 
 
-param_grid = {'learning_rate': [0.3], 'n_estimators': [10], 'max_depth': [5,10,15], 'min_child_weight': [1]}
+param_grid = {'learning_rate': [0.1,0.2,0.3], 'n_estimators': [300,400,500], 'max_depth': [5,10], 'min_child_weight': [1]}
 
 
 
 kfold = RepeatedStratifiedKFold(n_splits=5, n_repeats=10)
 
-grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", n_jobs=2, cv=kfold, verbose=1, return_train_score=True, refit=True)
+grid_search = GridSearchCV(model, param_grid, scoring="roc_auc", n_jobs=-1, cv=kfold, verbose=1, return_train_score=True)
 grid_result = grid_search.fit(X_train, y_train)
 
 # 判断模型准确性
@@ -36,10 +36,10 @@ from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import classification_report
 bclf = grid_result.best_estimator_
+bclf.fit(X_train, y_train)
 y_true = y_test
 y_pred = bclf.predict(X_test)
 y_pred_pro = bclf.predict_proba(X_test)
-
 y_scores = pd.DataFrame(y_pred_pro, columns=bclf.classes_.tolist())[1].values
 print(classification_report(y_true, y_pred))
 auc_value = roc_auc_score(y_true, y_scores)
