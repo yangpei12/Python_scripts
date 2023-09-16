@@ -8,7 +8,7 @@ from sklearn.metrics import confusion_matrix
 import os
 
 # 设置工作路径
-os.chdir(r'E:\售后\机器学习\xgboost/Input')
+os.chdir(r'E:\售后\机器学习\xgboost\Input')
 
 # 使用pandas将数据读取为数据框
 input_data_frame = pd.read_excel('xgboost_input_data.xlsx')
