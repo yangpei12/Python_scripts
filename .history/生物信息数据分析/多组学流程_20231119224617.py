@@ -62,10 +62,6 @@ common_pathway_plot_cmd = 'Rscript {0}'.format(common_pathway_plot_script)
 subprocess.run(common_pathway_plot_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 3. 相关系数热图 ==========================
-# R文件路径
-corrcoef_heatmap_script = r'E:\售后\多组学测试\相关系数热图.R'
-corrcoef_heatmap_cmd = 'Rscript {0}'.format(corrcoef_heatmap_script)
-subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 4. 九象限图 =============================
 # ========================== 5. O2PLS分析 ============================
