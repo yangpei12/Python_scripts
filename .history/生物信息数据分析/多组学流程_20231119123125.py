@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import subprocess
+import re
 import os
 itemPath = r'E:\售后\多组学测试'
 os.chdir(itemPath)
@@ -27,7 +27,7 @@ meta_kegg_pathway_name = meta_kegg_data['Pathway']
 common_pathway = set(mRNA_kegg_pathway_name) & set(meta_kegg_pathway_name)
 common_pathway_df = pd.DataFrame({'common_pathway':list(common_pathway)})
 
-# ========================== 2. 差异基因和差异代谢物相关性分析 ==========================
+# ========================== 2. 差异基因和差异代谢物相关性 ==========================
 diff_mRNA_path = 'mRNA/{0}/{1}_Gene_differential_expression.xlsx'.format(cond1, cond1)
 diff_meta_path = 'meta/{0}/{1}.significant.idms2.xlsx'.format(cond2, cond2)
 
@@ -53,21 +53,6 @@ for i in range(0,10):
     for n in range(0,6):
         mRNA_meta_corr_matrix = mRNA_meta_corr()
         print(mRNA_meta_corr_matrix[n][0][1])
-
-
-# ========================== 2. 使用R绘制共同通路图 ==========================
-# R文件路径
-common_pathway_plot_script = r'E:\售后\多组学测试\共有通路散点图.R'
-common_pathway_plot_cmd = 'Rscript {0}'.format(common_pathway_plot_script)
-subprocess.run(common_pathway_plot_cmd, shell=True, capture_output=True, encoding='utf-8')
-
-# ========================== 3. 相关系数热图 ==========================
-# ========================== 4. 九象限图 =============================
-# ========================== 5. O2PLS分析 ============================
-# R文件路径
-o2pls_analysis_script = r'E:\售后\多组学测试\O2PLS分析.R'
-o2pls_analysis_cmd = 'Rscript {0}'.format(o2pls_analysis_script)
-subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 
 
