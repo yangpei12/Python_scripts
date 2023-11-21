@@ -28,7 +28,6 @@ meta_kegg_pathway_name = meta_kegg_data['Pathway']
 common_pathway = set(mRNA_kegg_pathway_name) & set(meta_kegg_pathway_name)
 common_pathway_df = pd.DataFrame({'common_pathway':list(common_pathway)})
 
-
 # ========================== 2. 差异基因和差异代谢物相关性分析 ==========================
 diff_mRNA_path = 'mRNA/{0}/{1}_Gene_differential_expression.xlsx'.format(cond1, cond1)
 diff_meta_path = 'meta/{0}/{1}.significant.idms2.xlsx'.format(cond2, cond2)
@@ -44,38 +43,21 @@ diff_meta_exp_matrix = diff_meta_exp.iloc[:,0:6]
 def mRNA_extract_function(row_index):
     each_mRNA_exp = diff_mRNA_exp_matrix.iloc[row_index, :]
     
-    def meta_extract_function():
-        mRNA_meta_corr = diff_meta_exp_matrix.apply(scipy.stats.pearsonr, axis=1, args=(each_mRNA_exp, ))
+    def meta_extract_functioon():
+        mRNA_meta_corr = diff_meta_exp_matrix.apply(np.corrcoef, axis=1, args=(each_mRNA_exp, ))
         return mRNA_meta_corr
     
-    return meta_extract_function
+    return meta_extract_functioon
 
-
-diff_mRNA_nums = 3
-diff_meta_mums = 4
-empty_corr_dataframe = []
-for i in range(0, diff_mRNA_nums):
+for i in range(0,1):
     mRNA_meta_corr = mRNA_extract_function(i)
-    for n in range(0,diff_meta_mums):
-        mRNA_name = diff_mRNA_exp_matrix.index[i]
-        meta_name = diff_meta_exp_matrix.index[n]
-
+    for n in range(0,2):
         mRNA_meta_corr_matrix = mRNA_meta_corr()
-
-        mRNA_meta_corr_coef = mRNA_meta_corr_matrix[n][0]
-        mRNA_meta_corr_pvalue = mRNA_meta_corr_matrix[n][1]
-
-        mRNA_meta_corr_dataframe = pd.DataFrame({'mRNA': [mRNA_name], 'meta':[meta_name], 
-                                                 'corr_coef': [mRNA_meta_corr_coef],
-                                                 'corr_pvalue': mRNA_meta_corr_pvalue})
+        mRNA = diff_mRNA_exp_matrix.index[i]
+        meta = diff_meta_exp_matrix.index[n]
+        mRNA_meta_corrcoef = mRNA_meta_corr_matrix[n][0][1]
+        mRNA_meta_corr_dataframe = pd.DataFrame({'mRNA':mRNA, 'meta':meta, 'corrcoef':mRNA_meta_corrcoef})
         
-        empty_corr_dataframe.append(mRNA_meta_corr_dataframe)
-
-mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
-
-# 相关性结果的输出
-output_name = '{0}/mRNA_meta_corr_result.txt'.format('相关性输出')
-mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
 
 
 
@@ -92,10 +74,6 @@ corrcoef_heatmap_cmd = 'Rscript {0}'.format(corrcoef_heatmap_script)
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 4. 九象限图 =============================
-# 筛选相关系数为0.8且pvalue<0.05的关系对
-corr_filter = mRNA_meta_corr_result.query('(abs(corr_coef)>0.7 & corr_pvalue < 0.1)')
-
-
 # ========================== 5. O2PLS分析 ============================
 # R文件路径
 o2pls_analysis_script = r'E:\售后\多组学测试\O2PLS分析.R'
