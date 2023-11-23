@@ -52,6 +52,10 @@ output_name = '{0}/common_pathway_result.txt'.format('Output')
 common_pathway_result.to_csv(output_name, sep='\t', index=False)
 
 
+# 整理表达谱矩阵以进行O2PLS分析
+
+
+
 # ========================== 2. 差异基因和差异代谢物相关性分析 ==========================
 diff_mRNA_path = 'mRNA/{0}/{1}_Gene_differential_expression.xlsx'.format(cond1, cond1)
 diff_meta_path = 'meta/{0}/{1}.significant.idms2.xlsx'.format(cond2, cond2)
@@ -99,10 +103,6 @@ mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
 # 相关性结果的输出
 output_name = '{0}/mRNA_meta_corr_result.txt'.format('Output')
 mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
-
-# o2pls结果输出
-diff_mRNA_exp_matrix.to_csv('Output/mRNA_exp_matrix.txt', sep='\t', index=False)
-diff_meta_exp_matrix.to_csv('Output/meta_exp_matrix.txt', sep='\t', index=False)
 
 
 # =============================================================================

@@ -100,10 +100,6 @@ mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
 output_name = '{0}/mRNA_meta_corr_result.txt'.format('Output')
 mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
 
-# o2pls结果输出
-diff_mRNA_exp_matrix.to_csv('Output/mRNA_exp_matrix.txt', sep='\t', index=False)
-diff_meta_exp_matrix.to_csv('Output/meta_exp_matrix.txt', sep='\t', index=False)
-
 
 # =============================================================================
 #                                        绘图

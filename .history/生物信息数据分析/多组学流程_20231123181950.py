@@ -3,8 +3,6 @@ import numpy as np
 import scipy
 import subprocess
 import os
-
-# 分析路径
 itemPath = r'/Users/yangpei/YangPei/after_sale/多组学测试'
 os.chdir(itemPath)
 
@@ -100,17 +98,12 @@ mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
 output_name = '{0}/mRNA_meta_corr_result.txt'.format('Output')
 mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
 
-# o2pls结果输出
-diff_mRNA_exp_matrix.to_csv('Output/mRNA_exp_matrix.txt', sep='\t', index=False)
-diff_meta_exp_matrix.to_csv('Output/meta_exp_matrix.txt', sep='\t', index=False)
-
 
 # =============================================================================
 #                                        绘图
 # =============================================================================
 
-# ========================== 1. 通路标色 ==========================
-# 调用sh_diff_exp1.sh中的KEGG_pathwayview.pl
+
 
 # ========================== 2. 使用R绘制共同通路图 ==========================
 # R文件路径
@@ -129,7 +122,8 @@ subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='
 
 # ========================== 5. O2PLS分析 ============================
 # R文件路径
-o2pls_analysis_cmd = 'Rscript O2PLS_analysis.R'
+o2pls_analysis_script = r'E:\售后\多组学测试\O2PLS分析.R'
+o2pls_analysis_cmd = 'Rscript {0}'.format(o2pls_analysis_script)
 subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 
