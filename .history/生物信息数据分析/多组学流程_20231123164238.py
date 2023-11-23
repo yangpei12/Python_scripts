@@ -9,10 +9,6 @@ os.chdir(itemPath)
 cond1 = 'CdOPVSCd'
 cond2 = 'Cd+1_CdCK'
 
-# =============================================================================
-#                                        数据整理
-# =============================================================================
-
 
 # ========================== 1. 合并共同通路 ==========================
 # 设置路径
@@ -33,21 +29,13 @@ common_pathway = set(mRNA_kegg_pathway_name) & set(meta_kegg_pathway_name)
 common_pathway_df = pd.DataFrame({'Pathway':list(common_pathway)})
 
 # 输出共同同路表同时以供绘制图片
-mRNA_kegg_pathway_selected_col = mRNA_kegg_data.loc[:, ['Pathway_Name', 'S', 'B', 'P.value']]
-mRNA_kegg_pathway_selected_col.columns = ['Pathway', 'S', 'B', 'Pvalue']
+mRNA_kegg_pathway_selected_col = mRNA_kegg_data.loc[:, ['Pathway_Name', 'S', 'P.value']]
+mRNA_kegg_pathway_selected_col.columns = ['Pathway', 's', 'Pvalue']
 mRNA_common_kegg_pathway = pd.merge(common_pathway_df, mRNA_kegg_pathway_selected_col, on='Pathway')
 mRNA_common_kegg_pathway['type'] = 'mRNA'
 
-
-meta_kegg_pathway_selected_col = meta_kegg_data.loc[:, ['Pathway', 'NumCompound', 'Background','Pvalue']]
-meta_kegg_pathway_selected_col.rename(columns={'NumCompound': 'S', 'Background': 'B'}, inplace=True)
-meta_common_kegg_pathway = pd.merge(common_pathway_df, meta_kegg_pathway_selected_col, on='Pathway')
-meta_common_kegg_pathway['type'] = 'meta'
-
-common_pathway_result = pd.concat([mRNA_common_kegg_pathway, meta_common_kegg_pathway])
-
-output_name = '{0}/common_pathway_result.txt'.format('Output')
-common_pathway_result.to_csv(output_name, sep='\t', index=False)
+meta_kegg_pathway_selected_col = meta_kegg_data.loc[:, ['Pathway', 'NumCompound', 'Pvalue']]
+meta_common_kegg_pathway = pd.merge(common_pathway_df, mRNA_kegg_pathway_selected_col, on='Pathway')
 
 
 # ========================== 2. 差异基因和差异代谢物相关性分析 ==========================
@@ -95,29 +83,26 @@ for i in range(0, diff_mRNA_nums):
 mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
 
 # 相关性结果的输出
-output_name = '{0}/mRNA_meta_corr_result.txt'.format('Output')
+output_name = '{0}/mRNA_meta_corr_result.txt'.format('相关性输出')
 mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
-
-
-# =============================================================================
-#                                        绘图
-# =============================================================================
 
 
 
 # ========================== 2. 使用R绘制共同通路图 ==========================
 # R文件路径
-common_pathway_plot_cmd = 'Rscript common_pathway_scatterplot.R'
+common_pathway_plot_script = r'E:\售后\多组学测试\共有通路散点图.R'
+common_pathway_plot_cmd = 'Rscript {0}'.format(common_pathway_plot_script)
 subprocess.run(common_pathway_plot_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 3. 相关系数热图 ==========================
 # R文件路径
-corrcoef_heatmap_cmd = 'Rscript corr_heatmap.R'
+corrcoef_heatmap_script = r'E:\售后\多组学测试\相关系数热图.R'
+corrcoef_heatmap_cmd = 'Rscript {0}'.format(corrcoef_heatmap_script)
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 4. 九象限图 =============================
-corrcoef_heatmap_cmd = 'Rscript nine_quadrant.R'
-subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
+# 筛选相关系数为0.8且pvalue<0.05的关系对
+corr_filter = mRNA_meta_corr_result.query('(abs(corr_coef)>0.7 & corr_pvalue < 0.1)')
 
 
 # ========================== 5. O2PLS分析 ============================
