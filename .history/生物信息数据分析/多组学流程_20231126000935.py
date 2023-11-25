@@ -87,16 +87,55 @@ def mRNA_extract_function(row_index):
 diff_mRNA_nums = diff_mRNA_exp_matrix.shape[0]
 output_name = 'summary/{0}/Integrative_Analysis/{0}_mRNA_meta_corr_result.txt'.format(cond, cond)
 
-# 执行并行计算
 if __name__ == '__main__':
     with multiprocessing.Pool(8) as p:
-
-        # result为函数返回值的列表
         result  = p.map(mRNA_extract_function, list(range(diff_mRNA_nums)))
         mRNA_meta_corr_matrix = pd.concat(result)
         mRNA_meta_corr_matrix.to_csv(output_name, sep='\t', index=False)
 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+# 相关性结果的输出
+# output_name = 'summary/{0}/Integrative_Analysis/{0}_mRNA_meta_corr_result.txt'.format(cond, cond)
+# results.to_csv(output_name, sep='\t', index=False)
+for i in range(0, diff_mRNA_nums):
+    mRNA_meta_corr = mRNA_extract_function(i)
+    for n in range(0,diff_meta_mums):
+        mRNA_name = diff_mRNA_exp_matrix.index[i]
+        meta_name = diff_meta_exp_matrix.index[n]
+
+        mRNA_meta_corr_matrix = mRNA_meta_corr()
+
+        mRNA_meta_corr_coef = mRNA_meta_corr_matrix[n][0]
+        mRNA_meta_corr_pvalue = mRNA_meta_corr_matrix[n][1]
+
+        mRNA_meta_corr_dataframe = pd.DataFrame({'mRNA': [mRNA_name], 'meta':[meta_name], 
+                                                 'corr_coef': [mRNA_meta_corr_coef],
+                                                 'corr_pvalue': mRNA_meta_corr_pvalue})
+        
+        empty_corr_dataframe.append(mRNA_meta_corr_dataframe)
+
+mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
+
+# 相关性结果的输出
+output_name = 'summary/{0}/Integrative_Analysis/{0}_mRNA_meta_corr_result.txt'.format(cond, cond)
+mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
+
 # 差异表达矩阵
+
 diff_mRNA_exp_matrix.to_csv('summary/{0}/Integrative_Analysis/{0}_mRNA_exp_matrix.txt'.format(cond, cond), sep='\t', index=False)
 diff_meta_exp_matrix.to_csv('summary/{0}/Integrative_Analysis/{0}_meta_exp_matrix.txt'.format(cond, cond), sep='\t', index=False)
 
@@ -126,4 +165,7 @@ subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='
 # ========================== 5. O2PLS分析 ============================
 # R文件路径
 o2pls_analysis_cmd = 'Rscript O2PLS_analysis.R'
-subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8') 
+subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8')
+"""
+
+

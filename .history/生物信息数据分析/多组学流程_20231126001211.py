@@ -126,4 +126,4 @@ subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='
 # ========================== 5. O2PLS分析 ============================
 # R文件路径
 o2pls_analysis_cmd = 'Rscript O2PLS_analysis.R'
-subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8') 
+subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8')

@@ -3,10 +3,9 @@ import numpy as np
 import scipy
 import subprocess
 import os
-import multiprocessing
 
 # 分析路径
-itemPath = r'/Users/yangpei/YangPei/after_sale/test_1'
+itemPath = r'/Users/yangpei/YangPei/after_sale/test_1/'
 os.chdir(itemPath)
 
 cond = 'HFDVSCD'
@@ -59,7 +58,7 @@ diff_meta_path = 'summary/{0}/alldata/significant.xlsx'.format(cond)
 mRNA_exp = pd.read_excel(diff_mRNA_path, index_col=0)
 diff_mRNA_exp = mRNA_exp.query('(significant=="yes")')
 diff_mRNA_exp.columns = diff_mRNA_exp.columns.str.lstrip('FPKM.')
-diff_meta_exp = pd.read_excel(diff_meta_path, index_col=4)
+diff_meta_exp = pd.read_excel(diff_meta_path, index_col=0)
 
 # 相关性分析的要求样本长度必须一致因此需要筛选共同的转录组样本与谢组样本。
 common_sample = set(list(diff_mRNA_exp)) & set(list(diff_meta_exp))
@@ -75,28 +74,42 @@ diff_meta_exp_matrix = diff_meta_exp.loc[:, sorted_samples[:-1]]
 # 根据表达矩阵，计算代谢物和基因的相关性，逐行扫描
 def mRNA_extract_function(row_index):
     each_mRNA_exp = diff_mRNA_exp_matrix.iloc[row_index, :]
-    mRNA_meta_corr = diff_meta_exp_matrix.apply(scipy.stats.pearsonr, axis=1, args=(each_mRNA_exp, ))
-    mRNA_name = diff_mRNA_exp_matrix.index[row_index]
-    meta_name = diff_meta_exp_matrix.index
-    mRNA_meta_corr_dict = dict(mRNA_meta_corr.values)
-    mRNA_meta_corr_df = pd.DataFrame({'mRNA':[mRNA_name]*len(meta_name),'metabolite':list(meta_name), 
-                                        'corr_coef':list(mRNA_meta_corr_dict.keys()), 
-                                        'pvalue':list(mRNA_meta_corr_dict.values())})
-    return mRNA_meta_corr_df
+    
+    def meta_extract_function():
+        mRNA_meta_corr = diff_meta_exp_matrix.apply(scipy.stats.pearsonr, axis=1, args=(each_mRNA_exp, ))
+        return mRNA_meta_corr
+    
+    return meta_extract_function
+
 
 diff_mRNA_nums = diff_mRNA_exp_matrix.shape[0]
+diff_meta_mums = diff_meta_exp_matrix.shape[0]
+empty_corr_dataframe = []
+for i in range(0, diff_mRNA_nums):
+    mRNA_meta_corr = mRNA_extract_function(i)
+    for n in range(0,diff_meta_mums):
+        mRNA_name = diff_mRNA_exp_matrix.index[i]
+        meta_name = diff_meta_exp_matrix.index[n]
+
+        mRNA_meta_corr_matrix = mRNA_meta_corr()
+
+        mRNA_meta_corr_coef = mRNA_meta_corr_matrix[n][0]
+        mRNA_meta_corr_pvalue = mRNA_meta_corr_matrix[n][1]
+
+        mRNA_meta_corr_dataframe = pd.DataFrame({'mRNA': [mRNA_name], 'meta':[meta_name], 
+                                                 'corr_coef': [mRNA_meta_corr_coef],
+                                                 'corr_pvalue': mRNA_meta_corr_pvalue})
+        
+        empty_corr_dataframe.append(mRNA_meta_corr_dataframe)
+
+mRNA_meta_corr_result = pd.concat(empty_corr_dataframe)
+
+# 相关性结果的输出
 output_name = 'summary/{0}/Integrative_Analysis/{0}_mRNA_meta_corr_result.txt'.format(cond, cond)
-
-# 执行并行计算
-if __name__ == '__main__':
-    with multiprocessing.Pool(8) as p:
-
-        # result为函数返回值的列表
-        result  = p.map(mRNA_extract_function, list(range(diff_mRNA_nums)))
-        mRNA_meta_corr_matrix = pd.concat(result)
-        mRNA_meta_corr_matrix.to_csv(output_name, sep='\t', index=False)
+mRNA_meta_corr_result.to_csv(output_name, sep='\t', index=False)
 
 # 差异表达矩阵
+
 diff_mRNA_exp_matrix.to_csv('summary/{0}/Integrative_Analysis/{0}_mRNA_exp_matrix.txt'.format(cond, cond), sep='\t', index=False)
 diff_meta_exp_matrix.to_csv('summary/{0}/Integrative_Analysis/{0}_meta_exp_matrix.txt'.format(cond, cond), sep='\t', index=False)
 
@@ -126,4 +139,7 @@ subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='
 # ========================== 5. O2PLS分析 ============================
 # R文件路径
 o2pls_analysis_cmd = 'Rscript O2PLS_analysis.R'
-subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8') 
+subprocess.run(o2pls_analysis_cmd, shell=True, capture_output=True, encoding='utf-8')
+
+
+
