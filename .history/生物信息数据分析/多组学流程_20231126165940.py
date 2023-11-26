@@ -110,7 +110,7 @@ diff_meta_exp_matrix.to_csv('summary/{0}/Integrative_Analysis/{0}_meta_exp_matri
 
 # ========================== 2. 使用R绘制共同通路图 ==========================
 # R文件路径
-common_pathway_plot_cmd = 'Rscript common_pathway_scatterplot.R -c {0}'.format(cond)
+common_pathway_plot_cmd = 'Rscript common_pathway_scatterplot.R'
 subprocess.run(common_pathway_plot_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 3. 相关系数热图 ==========================
@@ -119,7 +119,7 @@ corrcoef_heatmap_cmd = 'Rscript corr_heatmap.R -c {0}'.format(cond)
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 4. 九象限图 =============================
-corrcoef_heatmap_cmd = 'Rscript nine_quadrant.R -c {0}'.format(cond)
+corrcoef_heatmap_cmd = 'Rscript nine_quadrant.R'
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 

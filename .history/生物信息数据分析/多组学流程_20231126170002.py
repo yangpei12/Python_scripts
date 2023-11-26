@@ -119,7 +119,7 @@ corrcoef_heatmap_cmd = 'Rscript corr_heatmap.R -c {0}'.format(cond)
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 # ========================== 4. 九象限图 =============================
-corrcoef_heatmap_cmd = 'Rscript nine_quadrant.R -c {0}'.format(cond)
+corrcoef_heatmap_cmd = 'Rscript nine_quadrant.R'
 subprocess.run(corrcoef_heatmap_cmd, shell=True, capture_output=True, encoding='utf-8')
 
 
