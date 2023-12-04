@@ -1,8 +1,10 @@
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
-import matplotlib.pyplot as plt
-import numpy as np
 import mlxtend
+import matplotlib as plt
+import numpy as np
+import os
+os.chdir(r'/Users/yangpei/YangPei/machine_learning')
 
 """
 分类器的计算性能、预测性能在很大程度上取决于训练数据。监督机器学习算法训练过程涉及如下五个主要步骤：
@@ -57,7 +59,6 @@ plt.legend(loc='upper left')
 plt.tight_layout()
 plt.show()
 
-
 # 用随机森林评估特征的重要性
 forest = RandomForestClassifier(n_estimators=25, random_state=1, n_jobs=2)
 forest.fit(X_train, Y_train)
@@ -73,5 +74,3 @@ plt.xticks(range(X_train.shape[1]), rotation=90)
 plt.xlim([-1, X_train.shape[1]])
 plt.tighe_layout()
 plt.show()
-
-# 
