@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # 加载威斯康星数据集合
-df = pd.read_csv(r'E:\售后\机器学习\dataset\breast+cancer+wisconsin+diagnostic\wdbc.data', header=None)
+df = pd.read_csv(r'', header=None)
 
 # ============== step.1 数据转换 ==============
 # 将30个特征存入Numpy数组x中(直接调用df.values属性即可即可)。
@@ -27,13 +27,12 @@ from sklearn.pipeline import make_pipeline
 # 数据标准化及维度压缩
 pipe_line_regression = make_pipeline(StandardScaler(), PCA(n_components=2), LogisticRegression())
 
-# 拟合数据以构建模型
+# 拟合数据构建模型
 pipe_line_regression.fit(X_train, Y_train)
 
 # 利用模型进行预测
 y_pre = pipe_line_regression.predict(X_test)
 
-# 模型评估
 test_acc = pipe_line_regression.score(X_test, Y_test)
 print(f'Test accurary:{test_acc:.3f}')
 
@@ -232,21 +231,20 @@ print(f'Best estimator: {gs.best_estimator_}')
 from sklearn.metrics import roc_curve, auc
 from numpy import interp
 
-pipe_lr = make_pipeline(StandardScaler(), PCA(n_components=2), LogisticRegression(penalty='l2', random_state=1, solver='lbfgs', C=100))
+pipe_lr = make_pipeline(StandardScaler(), PCA(n_components=2), LogisticRegression(penalty='l2', random_state=1, solver='lbgfs', C=100))
 
 X_train2 = X_train[:, [4,14]]
-cv = list(StratifiedKFold(n_splits=5).split(X_train, Y_train))
+cv = list(StratifiedKFold(n_splits=3).split(X_train, Y_train))
 
 fig = plt.figure(figsize=(7,5))
 mean_tpr = 0.0
-mean_fpr = np.linspace(0, 1, 100)
+mean_fpr = np.linspace(0,1,100)
 all_tpr = []
 
 for i, (train, test) in enumerate(cv):
     probas = pipe_lr.fit(X_train2[train], Y_train[train]).predict_proba(X_train2[test])
     fpr, tpr, thresholds = roc_curve(Y_train[test], probas[:,1], pos_label=1)
-    mean_tpr += interp(mean_fpr, fpr, tpr)
-    mean_tpr[0] = 0
+    mean_tpr[0] = 0.0
     roc_auc = auc(fpr, tpr)
     plt.plot(fpr, tpr, label = f'ROC fold {i+1} (area = {roc_auc:.2f})')
 

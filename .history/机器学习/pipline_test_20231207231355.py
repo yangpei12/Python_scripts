@@ -27,7 +27,7 @@ from sklearn.pipeline import make_pipeline
 # 数据标准化及维度压缩
 pipe_line_regression = make_pipeline(StandardScaler(), PCA(n_components=2), LogisticRegression())
 
-# 拟合数据以构建模型
+# 拟合数据构建模型
 pipe_line_regression.fit(X_train, Y_train)
 
 # 利用模型进行预测
