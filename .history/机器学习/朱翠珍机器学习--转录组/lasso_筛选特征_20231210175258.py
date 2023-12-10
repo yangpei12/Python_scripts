@@ -26,10 +26,10 @@ sfm.fit(std_data, y)  # X是特征数据，y是目标变量
 
 col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
 selected_features = df.columns[col_index]  # 获取选定的特征
-
+# cols = list(selected_features) + ['Label']
 
 lasso_select = df.iloc[:, col_index + [-1]]
-lasso_select.to_excel( 'lasso_select_feature_mRNA.xlsx', index=False)
+#lasso_select.to_excel( 'lasso_select_feature.xlsx', index=False)
 
 
 # 绘制lasso路径图

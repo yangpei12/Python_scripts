@@ -2,13 +2,17 @@
 # 通过交叉验证来筛选最佳的alpha值
 from sklearn.linear_model import LassoCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import numpy as np
 import os
-os.chdir(r'E:\售后\朱翠珍--机器学习\转录组')
-df = pd.read_excel('finnal_ml_input.xlsx')
-x = df.iloc[:, 0:13023].values
-y = df.iloc[:, -1].values
+os.chdir(r'E:\售后\朱翠珍--机器学习\代谢组')
+df = pd.read_csv('combine-norm-metaboAnalystInput.csv')
+transposed_df = df.transpose()
+
+x = transposed_df.iloc[1:, 0:18710].values
+y = np.hstack([np.repeat(0, 30), np.repeat(1, 30), np.repeat(2, 30)])
+
 
 ss = StandardScaler()
 std_data = ss.fit_transform(x)
@@ -25,11 +29,11 @@ sfm = SelectFromModel(lasso, max_features=1000)
 sfm.fit(std_data, y)  # X是特征数据，y是目标变量
 
 col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
-selected_features = df.columns[col_index]  # 获取选定的特征
+# selected_features = df.columns[col_index]  # 获取选定的特征
+# cols = list(selected_features) + ['Label']
 
-
-lasso_select = df.iloc[:, col_index + [-1]]
-lasso_select.to_excel( 'lasso_select_feature_mRNA.xlsx', index=False)
+lasso_select = transposed_df.iloc[:, col_index]
+lasso_select.to_excel( 'lasso_select_feature_meta.xlsx', index=True)
 
 
 # 绘制lasso路径图

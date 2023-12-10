@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 import os
-os.chdir(r'E:\售后\朱翠珍--机器学习\转录组')
+os.chdir(r'E:\售后\朱翠珍--机器学习')
 df = pd.read_excel('finnal_ml_input.xlsx')
 x = df.iloc[:, 0:13023].values
 y = df.iloc[:, -1].values
@@ -22,14 +22,14 @@ from sklearn.linear_model import Lasso
 from sklearn.feature_selection import SelectFromModel
 lasso = Lasso(alpha=optimal_alpha)  # 调整alpha参数以控制特征选择的严格程度
 sfm = SelectFromModel(lasso, max_features=1000)
-sfm.fit(std_data, y)  # X是特征数据，y是目标变量
+sfm.fit(x, y)  # X是特征数据，y是目标变量
 
 col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
 selected_features = df.columns[col_index]  # 获取选定的特征
-
+# cols = list(selected_features) + ['Label']
 
 lasso_select = df.iloc[:, col_index + [-1]]
-lasso_select.to_excel( 'lasso_select_feature_mRNA.xlsx', index=False)
+#lasso_select.to_excel( 'lasso_select_feature.xlsx', index=False)
 
 
 # 绘制lasso路径图
