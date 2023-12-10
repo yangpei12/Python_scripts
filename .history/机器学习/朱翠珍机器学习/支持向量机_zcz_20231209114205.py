@@ -30,6 +30,84 @@ pipe_svc = make_pipeline(SVC(random_state=1))
 param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
 param_grid = [{'svc__C': param_range, 'svc__kernel': ['rbf'], 'svc__gamma': param_range}]
 
+
+# 创建分层K折交叉验证对象
+stratified_kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=1)
+
+# 交叉验证评分器
+from sklearn.model_selection import cross_val_score
+scores = cross_val_score(estimator=pipe_svc, X=X_train, y=Y_train, cv=stratified_kfold, n_jobs=-1)
+
+
+# 模型评估--学习曲线
+import matplotlib.pyplot as plt
+from sklearn.model_selection import learning_curve
+train_sizes, train_scores, test_scores = learning_curve(estimator = pipe_svc, X=X_train, y=Y_train, 
+                                                        train_sizes = np.linspace(0.1, 1.0, 10), 
+                                                        cv=stratified_kfold, n_jobs=-1)
+
+train_mean = np.mean(train_scores,axis=1)
+train_std = np.std(train_scores,axis=1)
+test_mean = np.mean(test_scores,axis=1)
+test_std = np.std(test_scores, axis=1)
+plt.plot(train_sizes, train_mean, color='blue', marker='o',markersize=5, label='Training accuracy')
+plt.fill_between(train_sizes, train_mean + train_std,train_mean - train_std, alpha=0.15, color='blue')
+plt.plot(train_sizes, test_mean,color='green', linestyle='--', marker='s', 
+         markersize=5, label='Validation accuracy')
+
+plt.fill_between(train_sizes,test_mean + test_std, test_mean - test_std, alpha=0.15, color='green')
+plt.grid()
+plt.xlabel('Number of training examples')
+plt.ylabel('Accuracy')
+plt.legend(loc='lower right')
+plt.ylim([0.8, 1.03])
+
+# 输出学习曲线图
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 # 定义内循环的学习器，使用网络搜索法进行内部交叉验证，选择出最优参数模型
 gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid, 
                   scoring= 'accuracy', cv=2, n_jobs=-1, refit=True)
@@ -40,7 +118,7 @@ cv_outer = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
 scores = cross_val_score(gs, X_train, Y_train, scoring='accuracy', cv=10)
 print(f'CV accuracy: {np.mean(scores):.3f}' f'+/-{np.std(scores):.3f}')
 
-"""
+
 # 执行外循环 --- 遍历嵌套的交叉验证迭代
 for train_ix, test_ix in cv_outer.split(x, y):
     # 获取训练集和测试集
