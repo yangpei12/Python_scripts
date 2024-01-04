@@ -1,6 +1,3 @@
-import cuml
-import cudf
-
 import xgboost as xgb
 from xgboost import XGBClassifier
 
@@ -9,16 +6,16 @@ import numpy as np
 import pandas as pd
 import os
 
-os.chdir(r'/mnt/d/售后/朱翠珍--机器学习/转录组')
-df = cudf.read_csv('lasso_select_feature_mRNA.csv')
+os.chdir(r'/mnt/d/售后/朱翠珍--机器学习/精神分裂--机器学习')
+df = pd.read_excel('lasso_select_feature_lncRNA.xlsx')
 final_result = open('xgboost_Report.txt', 'a')
 
 # 随机森林不要求假设数据线性可分，因此无需进行归一化，直接划分数据集
-x = cudf.DataFrame(df.iloc[:, 0:80].values)
-y = cudf.DataFrame(df.iloc[:, -1].values)
+x = df.iloc[:, 1:].values
+y = df.iloc[:, 0].values
 
 # ============== step.2 数据集划分 ==============
-from cuml.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 X_train, X_test, Y_train, Y_test = train_test_split(x, y, test_size=0.2, random_state=1, stratify=y) # stratify表示支持按比例分层策略
 
 
@@ -37,8 +34,7 @@ param_grid = [{'xgbclassifier__learning_rate': [0.01, 0.02, 0.03, 0.04, 0.05],
                'xgbclassifier__min_child_weight': [1],
                'xgbclassifier__booster': ['gbtree'],
                'xgbclassifier__n_estimators':[200, 300, 400],
-               'xgbclassifier__reg_alpha':[5, 6, 7, 8],
-               'xgbclassifier__tree_method':'gpu_hist'}]
+               'xgbclassifier__reg_alpha':[5, 6, 7, 8]}]
 
 # 创建分层K折交叉验证对象、创建超参数搜索对象
 stratified_kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
@@ -47,7 +43,7 @@ gs = GridSearchCV(estimator=pipe_xgb, param_grid=param_grid, cv=stratified_kfold
 # 嵌套交叉验证评分器
 from sklearn.model_selection import cross_val_score
 scores = cross_val_score(estimator=gs, X=X_train, y=Y_train, 
-                         scoring='accuracy', cv=10, n_jobs=4)
+                         scoring='accuracy', cv=8, n_jobs=4)
 
 # 交叉验证评分
 xgboost_cross_val_score = 'CV accuracy: {0:.3f}' f'+/-{1:.3f}\n'.format(np.mean(scores), np.std(scores))

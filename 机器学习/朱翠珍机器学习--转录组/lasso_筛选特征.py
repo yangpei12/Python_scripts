@@ -5,10 +5,12 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import numpy as np
 import os
-os.chdir(r'E:\售后\朱翠珍--机器学习\转录组')
-df = pd.read_excel('finnal_ml_input.xlsx')
-x = df.iloc[:, 0:13023].values
-y = df.iloc[:, -1].values
+os.chdir(r'/mnt/d/售后/朱翠珍--机器学习/精神分裂--机器学习')
+df = pd.read_excel('lncRNA_input.xlsx')
+
+
+x = df.iloc[:, 1:].values
+y = df.iloc[:, 0].values
 
 ss = StandardScaler()
 std_data = ss.fit_transform(x)
@@ -28,7 +30,7 @@ col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == Tr
 selected_features = df.columns[col_index]  # 获取选定的特征
 
 
-lasso_select = df.iloc[:, col_index + [-1]]
+lasso_select = df.iloc[:, col_index + [0]]
 lasso_select.to_excel( 'lasso_select_feature_mRNA.xlsx', index=False)
 
 
