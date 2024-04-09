@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 import os
 
-os.chdir(r'/mnt/d/售后/朱翠珍--机器学习/mRNA')
+os.chdir(r'E:\售后\朱翠珍--机器学习\转录组')
 df = pd.read_excel('lasso_select_feature_mRNA.xlsx')
 final_result = open('RandomFoest_Report.txt', 'a')
 
 # 随机森林不要求假设数据线性可分，因此无需进行归一化，直接划分数据集
-x = df.iloc[:, 0:-1].values
+x = df.iloc[:, 0:147].values
 y = df.iloc[:, -1].values
 
 # ============== step.2 数据集划分 ==============
@@ -33,12 +33,12 @@ param_grid = [{'randomforestclassifier__max_depth': [3,4,5,6,7,8],
 
 # 创建分层K折交叉验证对象、创建超参数搜索对象
 stratified_kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=1)
-gs = GridSearchCV(estimator=pipe_rf, param_grid=param_grid, cv=stratified_kfold, n_jobs=8, refit=True)
+gs = GridSearchCV(estimator=pipe_rf, param_grid=param_grid, cv=stratified_kfold, n_jobs=4, refit=True)
 
 # 嵌套交叉验证评分器
 from sklearn.model_selection import cross_val_score
 scores = cross_val_score(estimator=gs, X=X_train, y=Y_train, 
-                         scoring='accuracy', cv=5, n_jobs=8)
+                         scoring='accuracy', cv=5, n_jobs=4)
 
 # 交叉验证评分
 RandomForestClassifier_cross_val_score = 'CV accuracy: {0:.3f}' f'+/-{1:.3f}\n'.format(np.mean(scores), np.std(scores))
@@ -56,7 +56,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve
 train_sizes, train_scores, test_scores = learning_curve(estimator = clf, X=X_train, y=Y_train, 
                                                         train_sizes = np.linspace(0.1, 1.0, 10), 
-                                                        cv=stratified_kfold, n_jobs=8)
+                                                        cv=stratified_kfold, n_jobs=4)
 
 train_mean = np.mean(train_scores,axis=1)
 train_std = np.std(train_scores,axis=1)
@@ -142,11 +142,7 @@ plt.legend(bbox_to_anchor=(1, 0), loc=3, borderaxespad=0)
 plt.savefig('RandomForestClassifier_ROC_curve.pdf')
 plt.show()
 
-import shap
-shap.initjs()
 
-explainer = shap.Explainer(model=clf)
-shap_values = explainer.shap_values(x)
 
 
 
