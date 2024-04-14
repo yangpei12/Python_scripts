@@ -355,7 +355,7 @@ y = features_select_maxrix.iloc[:, -1].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
 # 支持向量机
-report = open('svm/SVM_report.txt', 'a')
+report = open('svm/SVM_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     svm_model, clf = model.svm()
@@ -370,7 +370,7 @@ if __name__ == "__main__":
 report.close()
 
 # 逻辑回归
-report = open('lr/LR_report.txt', 'a')
+report = open('lr/LR_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     lr_model, clf = model.lr()

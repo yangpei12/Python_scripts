@@ -259,7 +259,7 @@ class ml_algorithm:
         plt.xlabel('Number of training examples')
         plt.ylabel('Accuracy')
         plt.legend(bbox_to_anchor=(1, 0), loc=3, borderaxespad=0)
-        plt.savefig('%s/learning_curve.pdf'%path)
+        plt.savefig('%slearning_curve.pdf'%path)
 
     def precision_recall_f1_score(self, best_model):
         # 精确率和召回率 f1分数
@@ -311,7 +311,7 @@ class ml_algorithm:
         plt.xlabel('False positive rate')
         plt.ylabel('True positive rate')
         plt.legend(bbox_to_anchor=(1, 0), loc=3, borderaxespad=0)
-        plt.savefig('%s/ROC_curve.pdf'%path)
+        plt.savefig('%sROC_curve.pdf'%path)
 
     def sha(self, best_model, algorithm, path):
         # 使用shap为模型进行解释
@@ -334,8 +334,6 @@ class ml_algorithm:
 # ==========================================================================================
 #                                         结果输出
 # ==========================================================================================
-os.chdir(r'/mnt/d/售后/machine_learning')
-
 
 # 划分数据集
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
@@ -355,7 +353,7 @@ y = features_select_maxrix.iloc[:, -1].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
 # 支持向量机
-report = open('svm/SVM_report.txt', 'a')
+report = open('svm/SVM_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     svm_model, clf = model.svm()
@@ -366,11 +364,11 @@ if __name__ == "__main__":
     model.learning_curve_plot(svm_model, 'svm')
     model.precision_recall_f1_score(svm_model)
     model.Roc_cruve(svm_model, 'svm')
-    shap_plot = model.sha(svm_model, 'svm', 'svm')
+    shap_plot = model.sha(svm_model, 'svm')
 report.close()
 
 # 逻辑回归
-report = open('lr/LR_report.txt', 'a')
+report = open('lr/LR_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     lr_model, clf = model.lr()
@@ -381,35 +379,5 @@ if __name__ == "__main__":
     model.learning_curve_plot(lr_model, 'lr')
     model.precision_recall_f1_score(lr_model)
     model.Roc_cruve(lr_model, 'lr')
-    shap_plot = model.sha(lr_model, 'lr', 'lr')
-report.close()
-
-# 随机森林
-report = open('rf/RF_report.txt', 'a')
-if __name__ == "__main__":
-    model = ml_algorithm(X_train, X_test, y_train, y_test)
-    rf_model, clf = model.rf()
-    model.best_params(clf)
-    model.test_accurary(rf_model)
-    model.cross_val_score(rf_model)
-    model.confusion_matrix_est(rf_model, 'rf')
-    model.learning_curve_plot(rf_model, 'rf')
-    model.precision_recall_f1_score(rf_model)
-    model.Roc_cruve(rf_model, 'rf')
-    shap_plot = model.sha(rf_model, 'rf', 'rf')
-report.close()
-
-# xgboost
-report = open('xgb/XGB_report.txt', 'a')
-if __name__ == "__main__":
-    model = ml_algorithm(X_train, X_test, y_train, y_test)
-    xgb_model, clf = model.xgb()
-    model.best_params(clf)
-    model.test_accurary(xgb_model)
-    model.cross_val_score(xgb_model)
-    model.confusion_matrix_est(xgb_model, 'xgb')
-    model.learning_curve_plot(xgb_model, 'xgb')
-    model.precision_recall_f1_score(xgb_model)
-    model.Roc_cruve(xgb_model, 'xgb')
-    shap_plot = model.sha(xgb_model, 'xgb', 'xgb')
+    shap_plot = model.sha(lr_model, 'lr')
 report.close()

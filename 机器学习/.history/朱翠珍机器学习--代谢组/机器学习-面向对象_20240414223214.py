@@ -28,7 +28,7 @@ class features_select_algorithm:
         self.y_train = y_train
         self.y_test = y_test
 
-    def lasso_algorithm(self, path):
+    def lasso_algorithm(self):
         # lasso算法进行特征筛选
         from sklearn.linear_model import LassoCV
         from sklearn.linear_model import Lasso
@@ -79,7 +79,7 @@ class features_select_algorithm:
         plt.ylabel("Mean square error")
         plt.title("Mean square error on each fold")
         plt.axis("tight")
-        plt.savefig('%s/lasso_path_plot.pdf'%path)
+        plt.savefig('lasso/lasso_path_plot.pdf')
 
         return selected_features, clf.alpha_
 
@@ -210,7 +210,7 @@ class ml_algorithm:
         report.write(model_test_accuracy)
 
 
-    def confusion_matrix_est(self, best_model, path):
+    def confusion_matrix_est(self, best_model):
         # 绘制混淆矩阵图
         from sklearn.metrics import confusion_matrix
         Y_pred = best_model.predict(self.X_test)
@@ -224,7 +224,7 @@ class ml_algorithm:
         ax.xaxis.set_ticks_position('bottom')
         plt.xlabel('Predicted label')
         plt.ylabel('True label')
-        plt.savefig('%s/confusion_matrix.pdf'%path)
+        plt.savefig('confusion_matrix.pdf')
 
     
     def cross_val_score(self, best_model):
@@ -236,7 +236,7 @@ class ml_algorithm:
         report.write(cross_val_score_result)
 
         
-    def learning_curve_plot(self, best_model, path):
+    def learning_curve_plot(self, best_model):
         # 绘制学习曲线
         import matplotlib.pyplot as plt
         from sklearn.model_selection import learning_curve
@@ -248,7 +248,7 @@ class ml_algorithm:
         train_std = np.std(train_scores,axis=1)
         test_mean = np.mean(test_scores,axis=1)
         test_std = np.std(test_scores, axis=1)
-        plt.figure(figsize=(7, 5))
+        plt.figure(figsize=(7,5))
         plt.plot(train_sizes, train_mean, color='blue', marker='o',markersize=5, label='Training accuracy')
         plt.fill_between(train_sizes, train_mean + train_std,train_mean - train_std, alpha=0.15, color='blue')
         plt.plot(train_sizes, test_mean,color='green', linestyle='--', marker='s', 
@@ -259,7 +259,7 @@ class ml_algorithm:
         plt.xlabel('Number of training examples')
         plt.ylabel('Accuracy')
         plt.legend(bbox_to_anchor=(1, 0), loc=3, borderaxespad=0)
-        plt.savefig('%s/learning_curve.pdf'%path)
+        plt.savefig('learning_curve.pdf')
 
     def precision_recall_f1_score(self, best_model):
         # 精确率和召回率 f1分数
@@ -278,7 +278,7 @@ class ml_algorithm:
         f1_score_result = 'F1_score: {0:.3f}\n'.format(f1_val)
         report.write(f1_score_result)
 
-    def Roc_cruve(self, best_model, path):
+    def Roc_cruve(self, best_model):
         # 绘制ROC曲线
         from sklearn.metrics import roc_curve, auc
         from numpy import interp
@@ -311,9 +311,9 @@ class ml_algorithm:
         plt.xlabel('False positive rate')
         plt.ylabel('True positive rate')
         plt.legend(bbox_to_anchor=(1, 0), loc=3, borderaxespad=0)
-        plt.savefig('%s/ROC_curve.pdf'%path)
+        plt.savefig('ROC_curve.pdf')
 
-    def sha(self, best_model, algorithm, path):
+    def sha(self, best_model, algorithm):
         # 使用shap为模型进行解释
         import shap
         shap.initjs()
@@ -326,7 +326,7 @@ class ml_algorithm:
                             #inputData.iloc[i, :-1], show=False, matplotlib=True).savefig('%s_force_%s.png'%(algorithm, i))
         # 生成
         shap.summary_plot(shap_values, features_select_maxrix.iloc[:,:-1])
-        plt.savefig('%s/summary_plot.png'%path)
+        plt.savefig('svm2.summary.png')
 
 
 
@@ -335,81 +335,56 @@ class ml_algorithm:
 #                                         结果输出
 # ==========================================================================================
 os.chdir(r'/mnt/d/售后/machine_learning')
+if not os.path.exists('/mnt/d/售后/machine_learning/lasso'):
+    os.mkdir('/mnt/d/售后/machine_learning/lasso')
 
+    # 划分数据集
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
-# 划分数据集
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
-
-# lasso筛选特征
-if __name__ == "__main__":
-    select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
-    features, best_alpha = select_algorithm.lasso_algorithm('lasso')
-    col_names = [x for x in list(features)]
-    col_names.extend(['Label'])
-    features_select_maxrix = inputData.loc[:, col_names]
-    features_select_maxrix.to_csv('select_features.txt', sep='\t', index=False)
-
-
-X = features_select_maxrix.iloc[:, 0: -1].values
-y = features_select_maxrix.iloc[:, -1].values
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+    # lasso筛选特征
+    if __name__ == "__main__":
+        select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
+        features, best_alpha = select_algorithm.lasso_algorithm()
+        col_names = [x for x in list(features)]
+        col_names.extend(['Label'])
+        features_select_maxrix = inputData.loc[:, col_names]
 
 # 支持向量机
-report = open('svm/SVM_report.txt', 'a')
+os.mkdir('/mnt/d/售后/machine_learning/svm')
+os.chdir('/mnt/d/售后/machine_learning/svm')
+X = features_select_maxrix.iloc[:, 0: -1].values
+y = features_select_maxrix.iloc[:, -1].values
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+report = open('SVM_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     svm_model, clf = model.svm()
     model.best_params(clf)
     model.test_accurary(svm_model)
     model.cross_val_score(svm_model)
-    model.confusion_matrix_est(svm_model, 'svm')
-    model.learning_curve_plot(svm_model, 'svm')
+    model.confusion_matrix_est(svm_model)
+    model.learning_curve_plot(svm_model)
     model.precision_recall_f1_score(svm_model)
-    model.Roc_cruve(svm_model, 'svm')
-    shap_plot = model.sha(svm_model, 'svm', 'svm')
+    model.Roc_cruve(svm_model)
+    # force_plot = model.sha(svm_model, 'svm')
 report.close()
 
+"""
 # 逻辑回归
-report = open('lr/LR_report.txt', 'a')
+os.mkdir('/mnt/d/售后/machine_learning/lr')
+os.chdir('/mnt/d/售后/machine_learning/lr')
+report = open('LR_eport.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     lr_model, clf = model.lr()
     model.best_params(clf)
     model.test_accurary(lr_model)
     model.cross_val_score(lr_model)
-    model.confusion_matrix_est(lr_model, 'lr')
-    model.learning_curve_plot(lr_model, 'lr')
+    model.confusion_matrix_est(lr_model)
+    model.learning_curve_plot(lr_model)
     model.precision_recall_f1_score(lr_model)
-    model.Roc_cruve(lr_model, 'lr')
-    shap_plot = model.sha(lr_model, 'lr', 'lr')
+    model.Roc_cruve(lr_model)
+    # force_plot = model.sha(svm_model, 'svm')
 report.close()
-
-# 随机森林
-report = open('rf/RF_report.txt', 'a')
-if __name__ == "__main__":
-    model = ml_algorithm(X_train, X_test, y_train, y_test)
-    rf_model, clf = model.rf()
-    model.best_params(clf)
-    model.test_accurary(rf_model)
-    model.cross_val_score(rf_model)
-    model.confusion_matrix_est(rf_model, 'rf')
-    model.learning_curve_plot(rf_model, 'rf')
-    model.precision_recall_f1_score(rf_model)
-    model.Roc_cruve(rf_model, 'rf')
-    shap_plot = model.sha(rf_model, 'rf', 'rf')
-report.close()
-
-# xgboost
-report = open('xgb/XGB_report.txt', 'a')
-if __name__ == "__main__":
-    model = ml_algorithm(X_train, X_test, y_train, y_test)
-    xgb_model, clf = model.xgb()
-    model.best_params(clf)
-    model.test_accurary(xgb_model)
-    model.cross_val_score(xgb_model)
-    model.confusion_matrix_est(xgb_model, 'xgb')
-    model.learning_curve_plot(xgb_model, 'xgb')
-    model.precision_recall_f1_score(xgb_model)
-    model.Roc_cruve(xgb_model, 'xgb')
-    shap_plot = model.sha(xgb_model, 'xgb', 'xgb')
-report.close()
+"""
