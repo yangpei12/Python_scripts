@@ -393,7 +393,6 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
 
-
 # 支持向量机
 report = open('svm/SVM_report.txt', 'a')
 if __name__ == "__main__":
