@@ -15,7 +15,7 @@ from sklearn.feature_selection import SelectFromModel
 argvs = sys.argv
 # workDir = os.chdir(argvs[1])
 # inputData = pd.read_csv(argvs[2], sep='\t', header=0)
-inputData = pd.read_csv('/mnt/d/售后/machine_learning/mRNA_exp_matrix.txt', sep='\t', header=0)
+inputData = pd.read_csv('/Users/yangpei/YangPei/after_sale/ml/meta/meta_exp_matrix.txt', sep='\t', header=0)
 X = inputData.iloc[:, 0:-1].values
 y = inputData.iloc[:, -1].values
 
@@ -36,7 +36,6 @@ class features_select_algorithm:
         # 标准化
         scaler = StandardScaler().fit(self.X_train) 
         X_train = scaler.transform(self.X_train)
-        X_test = scaler.transform(self.X_test)
 
         # 使用alpha优化lasso
         # 创建交叉验证模型
@@ -52,7 +51,7 @@ class features_select_algorithm:
         best_model.fit(X_train, y_train)
 
         # 筛选特征
-        sfm = SelectFromModel(best_model)
+        sfm = SelectFromModel(best_model, max_features=10000)
         sfm.fit_transform(X, y)
         col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
         selected_features = inputData.columns[col_index]  # 获取选定的特征
@@ -64,11 +63,10 @@ class features_select_algorithm:
             clf.mse_path_.mean(axis=-1),
             "k",
             label="Average across the folds",
-            linewidth=2,
-        )
+            linewidth=2)
+        
         plt.axvline(
-            clf.alpha_, linestyle="--", color="k", label="alpha: CV estimate"
-        )
+            clf.alpha_, linestyle="--", color="k", label="alpha: CV estimate")
 
         # 调整y轴范围以与第一个图层重叠
         ymin, ymax = plt.ylim()
@@ -82,6 +80,35 @@ class features_select_algorithm:
         plt.savefig('%s/lasso_path_plot.pdf'%path)
 
         return selected_features, clf.alpha_
+    
+    def rfe(self):
+        from sklearn.feature_selection import RFECV
+        from sklearn.feature_selection import RFE
+
+        # 标准化
+        pass
+
+    def rfc(self):
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.feature_selection import SelectFromModel
+
+        # 创建学习器
+        clf = RandomForestClassifier(n_estimators=500, random_state=0)
+
+        # 拟合数据
+        clf = clf.fit(self.X_train, self.y_train)
+
+        # 构建selectModel对象
+        sfm = SelectFromModel(clf, prefit=True)
+
+        # 拟合数据
+        sfm.transform(self.X_train)
+
+        col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
+        selected_features = inputData.columns[col_index]  # 获取选定的特征
+        
+        return selected_features
+        
 
 # 创建机器学习类
 class ml_algorithm:
@@ -319,7 +346,7 @@ class ml_algorithm:
         shap.initjs()
         explainer = shap.KernelExplainer(model=best_model.predict, data=X)
         shap_values = explainer.shap_values(X) 
-
+        
         # 生成单个样本的力图
         #for i in range(len(inputData)):
             #shap.force_plot(explainer.expected_value, shap_values[i, :], 
@@ -327,15 +354,14 @@ class ml_algorithm:
         # 生成
         shap.summary_plot(shap_values, features_select_maxrix.iloc[:,:-1])
         plt.savefig('%s/summary_plot.png'%path)
-
+        return shap_values
 
 
 
 # ==========================================================================================
 #                                         结果输出
 # ==========================================================================================
-os.chdir(r'/mnt/d/售后/machine_learning')
-
+os.chdir(r'/Users/yangpei/YangPei/after_sale/ml/meta')
 
 # 划分数据集
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
@@ -347,12 +373,26 @@ if __name__ == "__main__":
     col_names = [x for x in list(features)]
     col_names.extend(['Label'])
     features_select_maxrix = inputData.loc[:, col_names]
-    features_select_maxrix.to_csv('select_features.txt', sep='\t', index=False)
+    features_select_maxrix.to_csv('select_features_Lasso.txt', sep='\t', index=False)
+
+    X = features_select_maxrix.iloc[:, 0: -1].values
+    y = features_select_maxrix.iloc[:, -1].values
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
 
-X = features_select_maxrix.iloc[:, 0: -1].values
-y = features_select_maxrix.iloc[:, -1].values
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+# random_froest 筛选特征
+if __name__ == "__main__":
+    select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
+    features = select_algorithm.rfc()
+    col_names = [x for x in list(features)]
+    col_names.extend(['Label'])
+    features_select_maxrix = inputData.loc[:, col_names]
+    features_select_maxrix.to_csv('select_features_randomFroest.txt', sep='\t', index=False)
+    X = features_select_maxrix.iloc[:, 0: -1].values
+    y = features_select_maxrix.iloc[:, -1].values
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+
+
 
 # 支持向量机
 report = open('svm/SVM_report.txt', 'a')
@@ -369,6 +409,7 @@ if __name__ == "__main__":
     shap_plot = model.sha(svm_model, 'svm', 'svm')
 report.close()
 
+"""
 # 逻辑回归
 report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
@@ -383,6 +424,8 @@ if __name__ == "__main__":
     model.Roc_cruve(lr_model, 'lr')
     shap_plot = model.sha(lr_model, 'lr', 'lr')
 report.close()
+
+
 
 # 随机森林
 report = open('rf/RF_report.txt', 'a')
@@ -399,6 +442,7 @@ if __name__ == "__main__":
     shap_plot = model.sha(rf_model, 'rf', 'rf')
 report.close()
 
+
 # xgboost
 report = open('xgb/XGB_report.txt', 'a')
 if __name__ == "__main__":
@@ -413,3 +457,4 @@ if __name__ == "__main__":
     model.Roc_cruve(xgb_model, 'xgb')
     shap_plot = model.sha(xgb_model, 'xgb', 'xgb')
 report.close()
+"""
