@@ -425,7 +425,7 @@ if __name__ == "__main__":
     model.sha(svm_model, 'svm', 'svm')
 report.close()
 
-
+"""
 # 逻辑回归
 report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
@@ -473,4 +473,4 @@ if __name__ == "__main__":
     model.Roc_cruve(xgb_model, 'xgb')
     model.sha(xgb_model, 'xgb', 'xgb')
 report.close()
-
+"""

@@ -368,8 +368,8 @@ class ml_algorithm:
                             #inputData.iloc[i, :-1], show=False, matplotlib=True).savefig('%s_force_%s.png'%(algorithm, i))
         # 生成
         shap.summary_plot(shap_values, features_select_maxrix.iloc[:,:-1])
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
-        plt.savefig('%s/summary_plot.pdf'%path)
+        #plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
+        #plt.savefig('%s/summary_plot.pdf'%path)
 
         return shap_values
 
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     model.sha(svm_model, 'svm', 'svm')
 report.close()
 
-
+"""
 # 逻辑回归
 report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
@@ -473,4 +473,4 @@ if __name__ == "__main__":
     model.Roc_cruve(xgb_model, 'xgb')
     model.sha(xgb_model, 'xgb', 'xgb')
 report.close()
-
+"""

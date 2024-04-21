@@ -422,10 +422,10 @@ if __name__ == "__main__":
     model.learning_curve_plot(svm_model, 'svm')
     model.precision_recall_f1_score(svm_model)
     model.Roc_cruve(svm_model, 'svm')
-    model.sha(svm_model, 'svm', 'svm')
+    shap_values = model.sha(svm_model, 'svm', 'svm')
 report.close()
 
-
+"""
 # 逻辑回归
 report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
@@ -438,7 +438,7 @@ if __name__ == "__main__":
     model.learning_curve_plot(lr_model, 'lr')
     model.precision_recall_f1_score(lr_model)
     model.Roc_cruve(lr_model, 'lr')
-    model.sha(lr_model, 'lr', 'lr')
+    shap_plot = model.sha(lr_model, 'lr', 'lr')
 report.close()
 
 
@@ -455,7 +455,7 @@ if __name__ == "__main__":
     model.learning_curve_plot(rf_model, 'rf')
     model.precision_recall_f1_score(rf_model)
     model.Roc_cruve(rf_model, 'rf')
-    model.sha(rf_model, 'rf', 'rf')
+    shap_plot = model.sha(rf_model, 'rf', 'rf')
 report.close()
 
 
@@ -471,6 +471,6 @@ if __name__ == "__main__":
     model.learning_curve_plot(xgb_model, 'xgb')
     model.precision_recall_f1_score(xgb_model)
     model.Roc_cruve(xgb_model, 'xgb')
-    model.sha(xgb_model, 'xgb', 'xgb')
+    shap_plot = model.sha(xgb_model, 'xgb', 'xgb')
 report.close()
-
+"""

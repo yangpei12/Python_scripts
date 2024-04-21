@@ -287,7 +287,7 @@ class ml_algorithm:
         plt.grid()
         plt.xlabel('Number of training examples')
         plt.ylabel('Accuracy')
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
+        plt.legend(loc='lower right', bbox_to_anchor=(1, 0), bbox_inches='tight')
         plt.tight_layout()
         plt.savefig('%s/learning_curve.pdf'%path)
 
@@ -340,7 +340,7 @@ class ml_algorithm:
         plt.ylim([-0.05, 1.05])
         plt.xlabel('False positive rate')
         plt.ylabel('True positive rate')
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
+        plt.legend(loc='lower right', bbox_to_anchor=(1, 0), bbox_inches='tight')
         plt.tight_layout()
         plt.savefig('%s/ROC_curve.pdf'%path)
 
@@ -356,7 +356,7 @@ class ml_algorithm:
         sorted_indices = np.argsort(feature_importance)[::-1]  # 根据特征重要性进行降序排序
         sorted_features = features_select_maxrix.columns[sorted_indices]  # 获取排序后的特征名称
         # 打印特征重要性排名
-        sys.stdout = open('%s/feature_importance_of_shap.txt'%path, 'a')
+        sys.stdout = open('feature_importance_of_shap.txt', 'a')
         print('the rank for feature importance:', file=sys.stdout)
         for i, feature in enumerate(sorted_features):
             print(f"{i+1}. {feature}: {feature_importance[sorted_indices[i]]}", file=sys.stdout)
@@ -368,7 +368,7 @@ class ml_algorithm:
                             #inputData.iloc[i, :-1], show=False, matplotlib=True).savefig('%s_force_%s.png'%(algorithm, i))
         # 生成
         shap.summary_plot(shap_values, features_select_maxrix.iloc[:,:-1])
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
+        plt.legend(loc='lower right', bbox_to_anchor=(1, 0), bbox_inches='tight')
         plt.savefig('%s/summary_plot.pdf'%path)
 
         return shap_values
@@ -422,10 +422,10 @@ if __name__ == "__main__":
     model.learning_curve_plot(svm_model, 'svm')
     model.precision_recall_f1_score(svm_model)
     model.Roc_cruve(svm_model, 'svm')
-    model.sha(svm_model, 'svm', 'svm')
+    shap_values = model.sha(svm_model, 'svm', 'svm')
 report.close()
 
-
+"""
 # 逻辑回归
 report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
@@ -438,7 +438,7 @@ if __name__ == "__main__":
     model.learning_curve_plot(lr_model, 'lr')
     model.precision_recall_f1_score(lr_model)
     model.Roc_cruve(lr_model, 'lr')
-    model.sha(lr_model, 'lr', 'lr')
+    shap_plot = model.sha(lr_model, 'lr', 'lr')
 report.close()
 
 
@@ -455,7 +455,7 @@ if __name__ == "__main__":
     model.learning_curve_plot(rf_model, 'rf')
     model.precision_recall_f1_score(rf_model)
     model.Roc_cruve(rf_model, 'rf')
-    model.sha(rf_model, 'rf', 'rf')
+    shap_plot = model.sha(rf_model, 'rf', 'rf')
 report.close()
 
 
@@ -471,6 +471,6 @@ if __name__ == "__main__":
     model.learning_curve_plot(xgb_model, 'xgb')
     model.precision_recall_f1_score(xgb_model)
     model.Roc_cruve(xgb_model, 'xgb')
-    model.sha(xgb_model, 'xgb', 'xgb')
+    shap_plot = model.sha(xgb_model, 'xgb', 'xgb')
 report.close()
-
+"""
