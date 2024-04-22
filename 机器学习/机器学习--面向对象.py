@@ -3,6 +3,7 @@
 # 导入基础包
 import os
 import sys
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,11 +13,25 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectFromModel
 
+# ========================== 创建命令行参数 =========================
+# 创建argparse对象
+parser = argparse.ArgumentParser(
+                    prog='DataCheck',
+                    description='This Program for Meachine Learning',
+                    epilog='Text at the bottom of help')
+# 添加参数
+parser.add_argument('workDir', help='please provide a work path')  # 工作路径
+parser.add_argument('inuput', help='please provide a path for input')  # 结果文件输出路径
+parser.add_argument('select_algorithm_option', help='please select a feature select algorithm: NoSlect、Lasso or RF')  # 结果文件输出路径
+
+# 解析参数：
+args = parser.parse_args()
+workDir = args.workDir # 工作路径
+input_data_path = args.inuput # 输入文件
+select_algorithm_option = args.select_algorithm_option # 选择筛选算法 NoSlect、Lasso、RF
+
 # 数据准备
-argvs = sys.argv
-# workDir = os.chdir(argvs[1])
-# inputData = pd.read_csv(argvs[2], sep='\t', header=0)
-inputData = pd.read_csv('/mnt/d/售后/machine_learning/meta/meta_exp_matrix.txt', sep='\t', header=0)
+inputData = pd.read_csv(input_data_path, sep='\t', header=0)
 X = inputData.iloc[:, 0:-1].values
 y = inputData.iloc[:, -1].values
 
@@ -52,7 +67,7 @@ class features_select_algorithm:
         best_model.fit(X_train, y_train)
 
         # 筛选特征
-        sfm = SelectFromModel(best_model, max_features=10000)
+        sfm = SelectFromModel(best_model, max_features=500)
         sfm.fit_transform(X, y)
         col_index = [i for i, value in enumerate(list(sfm.get_support())) if value == True]
         selected_features = inputData.columns[col_index]  # 获取选定的特征
@@ -139,7 +154,7 @@ class ml_algorithm:
         param_grid = [{'logisticregression__C': param_range}]
 
         # 创建分层K折交叉验证对象、创建超参数搜索对象
-        gs = GridSearchCV(estimator=pipe_lr, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=3, refit=True)
+        gs = GridSearchCV(estimator=pipe_lr, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=16, refit=True)
 
         # 在训练集上执行网络搜索并拟合
         clf = gs.fit(X = self.X_train, y = self.y_train)
@@ -163,7 +178,7 @@ class ml_algorithm:
         param_grid = [{'svc__C': param_range, 'svc__kernel': ['rbf'], 'svc__gamma': param_range}]
 
         # 创建分层K折交叉验证对象、创建超参数搜索对象
-        gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=4, refit=True)
+        gs = GridSearchCV(estimator=pipe_svc, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=16, refit=True)
 
         # 在训练集上执行网络搜索并拟合
         clf = gs.fit(X = self.X_train, y = self.y_train)
@@ -187,7 +202,7 @@ class ml_algorithm:
                'randomforestclassifier__n_estimators':[200,300,400,500]}]
 
         # 构建网络搜索对象
-        gs = GridSearchCV(estimator=pipe_rf, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=4, refit=True)
+        gs = GridSearchCV(estimator=pipe_rf, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=16, refit=True)
 
         # 在训练集上执行网络搜索并拟合
         clf = gs.fit(X = self.X_train, y = self.y_train)
@@ -213,7 +228,7 @@ class ml_algorithm:
                     'xgbclassifier__reg_alpha':[5, 6, 7, 8]}]
 
         # 创建分层K折交叉验证对象、创建超参数搜索对象
-        gs = GridSearchCV(estimator=pipe_xgb, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=4, refit=True)
+        gs = GridSearchCV(estimator=pipe_xgb, param_grid=param_grid, cv=self.stratified_kfold, n_jobs=16, refit=True)
 
         # 在训练集上执行网络搜索并拟合
         clf = gs.fit(X = self.X_train, y = self.y_train)
@@ -260,7 +275,7 @@ class ml_algorithm:
         # 嵌套交叉验证评分器
         from sklearn.model_selection import cross_val_score
         scores = cross_val_score(estimator=best_model, X = self.X_train, y = self.y_train, 
-                                scoring='accuracy', cv=10, n_jobs=4)
+                                scoring='accuracy', cv=10, n_jobs=16)
         cross_val_score_result = 'CV accuracy: {0:.3f}' f'+/-{1:.3f}\n'.format(np.mean(scores), np.std(scores))
         report.write(cross_val_score_result)
 
@@ -271,7 +286,7 @@ class ml_algorithm:
         from sklearn.model_selection import learning_curve
         train_sizes, train_scores, test_scores = learning_curve(estimator = best_model, X = self.X_train, y = self.y_train, 
                                                                 train_sizes = np.linspace(0.1, 1.0, 10), 
-                                                                cv=self.stratified_kfold, n_jobs=4)
+                                                                cv=self.stratified_kfold, n_jobs=16)
 
         train_mean = np.mean(train_scores,axis=1)
         train_std = np.std(train_scores,axis=1)
@@ -356,11 +371,11 @@ class ml_algorithm:
         sorted_indices = np.argsort(feature_importance)[::-1]  # 根据特征重要性进行降序排序
         sorted_features = features_select_maxrix.columns[sorted_indices]  # 获取排序后的特征名称
         # 打印特征重要性排名
-        sys.stdout = open('%s/feature_importance_of_shap.txt'%path, 'a')
-        print('the rank for feature importance:', file=sys.stdout)
+        feature_importance_sorted = open('%s/feature_importance_of_shap.txt'%path, 'a')
         for i, feature in enumerate(sorted_features):
-            print(f"{i+1}. {feature}: {feature_importance[sorted_indices[i]]}", file=sys.stdout)
-        sys.stdout.close()
+            output_handle = '{0}\t{1}{2}\n'.format(i+1, feature, feature_importance[sorted_indices[i]])
+            feature_importance_sorted.write(output_handle)
+        feature_importance_sorted.close()
 
         # 生成单个样本的力图
         #for i in range(len(inputData)):
@@ -368,7 +383,7 @@ class ml_algorithm:
                             #inputData.iloc[i, :-1], show=False, matplotlib=True).savefig('%s_force_%s.png'%(algorithm, i))
         # 生成
         shap.summary_plot(shap_values, features_select_maxrix.iloc[:,:-1])
-        plt.legend(loc='lower right', bbox_to_anchor=(1, 0))
+        plt.legend().remove()
         plt.savefig('%s/summary_plot.pdf'%path)
 
         return shap_values
@@ -378,40 +393,44 @@ class ml_algorithm:
 # ==========================================================================================
 #                                         结果输出
 # ==========================================================================================
-os.chdir(r'/mnt/d/售后/machine_learning/meta')
+os.chdir(workDir)
 
 # 划分数据集
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
-"""
-# lasso筛选特征
-if __name__ == "__main__":
-    select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
-    features, best_alpha = select_algorithm.lasso_algorithm('lasso')
-    col_names = [x for x in list(features)]
-    col_names.extend(['Label'])
-    features_select_maxrix = inputData.loc[:, col_names]
-    features_select_maxrix.to_csv('select_features_Lasso.txt', sep='\t', index=False)
 
-    X = features_select_maxrix.iloc[:, 0: -1].values
-    y = features_select_maxrix.iloc[:, -1].values
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
-"""
+if select_algorithm_option == 'NoSlect':
+    pass
+    
+elif select_algorithm_option == 'Lasso':
+    # lasso筛选特征
+    if __name__ == "__main__":
+        select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
+        features, best_alpha = select_algorithm.lasso_algorithm('lasso')
+        col_names = [x for x in list(features)]
+        col_names.extend(['Label'])
+        features_select_maxrix = inputData.loc[:, col_names]
+        features_select_maxrix.to_csv('select_features_Lasso.txt', sep='\t', index=False)
 
-# random_froest 筛选特征
-if __name__ == "__main__":
-    select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
-    features = select_algorithm.rfc()
-    col_names = [x for x in list(features)]
-    col_names.extend(['Label'])
-    features_select_maxrix = inputData.loc[:, col_names]
-    features_select_maxrix.to_csv('select_features_randomFroest.txt', sep='\t', index=False)
-    X = features_select_maxrix.iloc[:, 0: -1].values
-    y = features_select_maxrix.iloc[:, -1].values
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+        X = features_select_maxrix.iloc[:, 0: -1].values
+        y = features_select_maxrix.iloc[:, -1].values
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
+        
+elif select_algorithm_option == 'RF':
+    # random_froest 筛选特征
+    if __name__ == "__main__":
+        select_algorithm = features_select_algorithm(X_train, X_test, y_train, y_test)
+        features = select_algorithm.rfc()
+        col_names = [x for x in list(features)]
+        col_names.extend(['Label'])
+        features_select_maxrix = inputData.loc[:, col_names]
+        features_select_maxrix.to_csv('select_features_randomFroest.txt', sep='\t', index=False)
+        X = features_select_maxrix.iloc[:, 0: -1].values
+        y = features_select_maxrix.iloc[:, -1].values
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
 
 # 支持向量机
-report = open('svm/SVM_report.txt', 'a')
+report = open('report.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     svm_model, clf = model.svm()
@@ -423,11 +442,8 @@ if __name__ == "__main__":
     model.precision_recall_f1_score(svm_model)
     model.Roc_cruve(svm_model, 'svm')
     model.sha(svm_model, 'svm', 'svm')
-report.close()
-
 
 # 逻辑回归
-report = open('lr/LR_report.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     lr_model, clf = model.lr()
@@ -439,12 +455,8 @@ if __name__ == "__main__":
     model.precision_recall_f1_score(lr_model)
     model.Roc_cruve(lr_model, 'lr')
     model.sha(lr_model, 'lr', 'lr')
-report.close()
-
-
 
 # 随机森林
-report = open('rf/RF_report.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     rf_model, clf = model.rf()
@@ -456,11 +468,9 @@ if __name__ == "__main__":
     model.precision_recall_f1_score(rf_model)
     model.Roc_cruve(rf_model, 'rf')
     model.sha(rf_model, 'rf', 'rf')
-report.close()
 
 
 # xgboost
-report = open('xgb/XGB_report.txt', 'a')
 if __name__ == "__main__":
     model = ml_algorithm(X_train, X_test, y_train, y_test)
     xgb_model, clf = model.xgb()
@@ -472,5 +482,5 @@ if __name__ == "__main__":
     model.precision_recall_f1_score(xgb_model)
     model.Roc_cruve(xgb_model, 'xgb')
     model.sha(xgb_model, 'xgb', 'xgb')
-report.close()
 
+report.close()
