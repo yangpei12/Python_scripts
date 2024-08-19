@@ -7,7 +7,6 @@ import scipy
 import os
 os.chdir(r'C:\Users\lcbio\Desktop\工作\转录组开发计划\NLR免疫受体介导的植物免疫机制\基因集')
 
-
 # ======== 1. 转录因子分析 ==========
 """ 读取差异表达谱 """
 diff_exp = pd.read_excel('rd_CKVSC_CK_Gene_differential_expression.xlsx')
@@ -38,7 +37,7 @@ sns.clustermap(
 plt.savefig('heatmap.png',dpi=600)
 
 
-# ============= 转录因子相关性分析 ==================
+# ============= 2. 转录因子相关性分析 ==================
 # 模拟相关性
 x = np.random.rand(10,30)
 y = np.random.rand(30,30)
@@ -61,6 +60,9 @@ for m in range(a_gene_matrxi.shape[0]):
         # print(f'{x_name} and {y_name} corr is {stat_pearson[0]}')
 
 edge_df = pd.concat(corr_df)
+
+
+# ============= 3. 绘制转录因子及靶基因网络图 ==================
 
 # 创建网络图对象
 G = nx.DiGraph()
@@ -94,4 +96,37 @@ sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
 plt.colorbar(sm, label="Edge Correaltion")
 
-# 生成交互式网络图
+
+# ======== 4. 水杨酸和茉莉酸的GSEA分析 ==========
+# 读取数据
+ath_gene2go = pd.read_csv('ath_gene2go.txt', sep='\t', header=None)
+ath_gene2go.columns = ['species', 'gene_id', 'go_id', 'go_term']
+
+ath_gene2name = pd.read_csv('ath_gene2name.txt', sep='\t', header=None)
+ath_gene2name.columns = ['gene_id', 'gene_name']
+
+# 将GO数据与基因名字的数据合并
+go_term_add_gene_name = pd.merge(ath_gene2go, ath_gene2name, on='gene_id')
+
+# 筛选相关通路制作成GMT文件
+# 以水杨酸为例，首先筛选出水杨酸相关通路，然后制作成GMT文件(可按照go_id groupby)
+
+def conduct_gmt(key_word):
+    salicylic_acid = go_term_add_gene_name.query('go_term.str.contains(@key_word)')
+
+    # 按照go_id分组
+    salicylic_acid_gp = salicylic_acid.groupby('go_term')
+
+    # 制作gmt文件
+    output = open('%s_acid.gmt'%key_word, 'a')
+    for group_id, group_result in salicylic_acid_gp:
+        result = [group_id] + ['NA']
+        result.extend(list(group_result['gene_name']))
+        output.write('\t'.join(result) + '\n')
+    output.close()
+
+conduct_gmt('salicylic')
+conduct_gmt('jasmonic')
+"""
+
+
