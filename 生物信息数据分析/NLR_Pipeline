@@ -1,0 +1,68 @@
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import pandas as pd
+import scipy
+import numpy as np
+import seaborn as sns
+
+# 模拟相关性
+x = np.random.rand(10,30)
+y = np.random.rand(30,30)
+
+a_gene_matrxi = pd.DataFrame(x, index=['gene_a_' + str(x) for x in range(10)])
+b_gene_matrxi = pd.DataFrame(y, index=['gene_b_' + str(x) for x in range(30)])
+
+# 逐行扫描
+corr_df = []
+for m in range(a_gene_matrxi.shape[0]):
+    x = a_gene_matrxi.iloc[m,:]
+    x_name = a_gene_matrxi.index[m]
+    for n in range(b_gene_matrxi.shape[0]):
+        y = b_gene_matrxi.iloc[n,:]
+        y_name = b_gene_matrxi.index[n]
+        stat_pearson = scipy.stats.pearsonr(x, y)
+        weight = round(stat_pearson[0],2)
+        cor_df = pd.DataFrame({'source': x_name, 'target': y_name, 'weight':[weight]})
+        corr_df.append(cor_df)
+        # print(f'{x_name} and {y_name} corr is {stat_pearson[0]}')
+
+edge_df = pd.concat(corr_df)
+
+
+
+
+
+# 创建网络图对象
+G = nx.DiGraph()
+
+# 添加节点和边
+for m in range(edge_df.shape[0]):
+    source = edge_df.iloc[m,:][0]
+    target = edge_df.iloc[m,:][1]
+    weight = edge_df.iloc[m,:][2]
+    G.add_edge(source, target, weight = weight)
+
+# 提取权重
+weights = np.array([G[u][v]['weight'] for u,v in G.edges()])
+
+# 定义边的颜色（根据权重）
+# edge_colors = ['red' if w > 0.5 else 'blue' for w in weights]
+
+# 使用Viridis渐变色
+cmap = plt.cm.viridis
+norm = plt.Normalize(vmin=weights.min(), vmax=weights.max())
+edge_colors = cmap(norm(weights))
+
+# 绘制图
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, node_size=700, node_color= 'skyblue', font_size=10, edge_color = edge_colors)
+# edge_labels = nx.get_edge_attributes(G, 'weight')
+# nx.draw_networkx_edge_labels(G, pos)
+
+# 添加颜色图例
+sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])
+plt.colorbar(sm, label="Edge Correaltion")
+
+# 生成交互式网络图
