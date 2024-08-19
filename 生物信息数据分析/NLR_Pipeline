@@ -4,7 +4,7 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import scipy
-
+import os
 os.chdir(r'C:\Users\lcbio\Desktop\工作\转录组开发计划\NLR免疫受体介导的植物免疫机制\基因集')
 
 
