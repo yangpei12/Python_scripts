@@ -1,11 +1,44 @@
-
 import matplotlib.pyplot as plt
+import seaborn as sns
 import networkx as nx
 import pandas as pd
-import scipy
 import numpy as np
-import seaborn as sns
+import scipy
 
+os.chdir(r'C:\Users\lcbio\Desktop\工作\转录组开发计划\NLR免疫受体介导的植物免疫机制\基因集')
+
+
+# ======== 1. 转录因子分析 ==========
+""" 读取差异表达谱 """
+diff_exp = pd.read_excel('rd_CKVSC_CK_Gene_differential_expression.xlsx')
+
+""" 把和免疫相关的转录因子在表达谱中捞取出来 """
+tfs = ['WRKY', 'MYB', 'bZIP', 'NAC', 'ERF', 'AP2']
+
+tf_exp_df = diff_exp.query('(TF_Family == @tfs) & (significant == "yes")')
+
+tf_exp_df_fpkm = tf_exp_df.filter(regex='gene_name|FPKM.')
+
+new_col_name = tf_exp_df_fpkm.columns.str.replace('FPKM.', '')
+
+tf_exp_df_fpkm.columns = new_col_name
+
+""" 绘制热图 """
+clustermap_data = pd.DataFrame(tf_exp_df_fpkm.iloc[:, 1:].values, 
+                            columns=tf_exp_df_fpkm.columns[1:], 
+                            index=tf_exp_df_fpkm['gene_name'])
+
+sns.clustermap(
+    clustermap_data,
+    figsize=(7, 5),
+    col_cluster=False,
+    dendrogram_ratio=(.1, .2),
+    cbar_pos=(0, .3, .03, .4)
+)
+plt.savefig('heatmap.png',dpi=600)
+
+
+# ============= 转录因子相关性分析 ==================
 # 模拟相关性
 x = np.random.rand(10,30)
 y = np.random.rand(30,30)
@@ -28,10 +61,6 @@ for m in range(a_gene_matrxi.shape[0]):
         # print(f'{x_name} and {y_name} corr is {stat_pearson[0]}')
 
 edge_df = pd.concat(corr_df)
-
-
-
-
 
 # 创建网络图对象
 G = nx.DiGraph()
