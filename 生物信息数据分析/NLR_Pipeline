@@ -3,13 +3,27 @@ import seaborn as sns
 import networkx as nx
 import pandas as pd
 import numpy as np
-import scipy
+from gseapy import GSEA
+from gseapy import heatmap
+import sys
 import os
-os.chdir(r'C:\Users\lcbio\Desktop\工作\转录组开发计划\NLR免疫受体介导的植物免疫机制\基因集')
 
-# ======== 1. 转录因子分析 ==========
+args = sys.argv
+
+"""
+命令行参数
+参数1:比较组
+参数2: 物种的三字母缩写
+"""
+cond = args[1]
+species = args[2]
+
+# =============================================================================
+#                                1. 转录因子分析
+# =============================================================================
+
 """ 读取差异表达谱 """
-diff_exp = pd.read_excel('rd_CKVSC_CK_Gene_differential_expression.xlsx')
+diff_exp = pd.read_csv('%s_Gene_differential_expression.txt'%cond, sep='\t')
 
 """ 把和免疫相关的转录因子在表达谱中捞取出来 """
 tfs = ['WRKY', 'MYB', 'bZIP', 'NAC', 'ERF', 'AP2']
@@ -23,6 +37,7 @@ new_col_name = tf_exp_df_fpkm.columns.str.replace('FPKM.', '')
 tf_exp_df_fpkm.columns = new_col_name
 
 """ 绘制热图 """
+plt.plot()
 clustermap_data = pd.DataFrame(tf_exp_df_fpkm.iloc[:, 1:].values, 
                             columns=tf_exp_df_fpkm.columns[1:], 
                             index=tf_exp_df_fpkm['gene_name'])
@@ -34,99 +49,172 @@ sns.clustermap(
     dendrogram_ratio=(.1, .2),
     cbar_pos=(0, .3, .03, .4)
 )
-plt.savefig('heatmap.png',dpi=600)
+plt.savefig('heatmap.png', dpi=300)
 
 
-# ============= 2. 转录因子相关性分析 ==================
-# 模拟相关性
-x = np.random.rand(10,30)
-y = np.random.rand(30,30)
+# =============================================================================
+#                                2. 转录因子共表达分析
+# =============================================================================
+plt.plot()
+heatmap_data = pd.DataFrame(tf_exp_df_fpkm.iloc[:, 1:].values, 
+                            columns=tf_exp_df_fpkm.columns[1:], 
+                            index=tf_exp_df_fpkm['gene_name'])
 
-a_gene_matrxi = pd.DataFrame(x, index=['gene_a_' + str(x) for x in range(10)])
-b_gene_matrxi = pd.DataFrame(y, index=['gene_b_' + str(x) for x in range(30)])
+corr_heatmap_data = heatmap_data.transpose().corr()
+sns.heatmap(corr_heatmap_data, cmap='bwr')
+plt.savefig('corr_heatmap.png', dpi=300)
 
-# 逐行扫描
-corr_df = []
-for m in range(a_gene_matrxi.shape[0]):
-    x = a_gene_matrxi.iloc[m,:]
-    x_name = a_gene_matrxi.index[m]
-    for n in range(b_gene_matrxi.shape[0]):
-        y = b_gene_matrxi.iloc[n,:]
-        y_name = b_gene_matrxi.index[n]
-        stat_pearson = scipy.stats.pearsonr(x, y)
-        weight = round(stat_pearson[0],2)
-        cor_df = pd.DataFrame({'source': x_name, 'target': y_name, 'weight':[weight]})
-        corr_df.append(cor_df)
-        # print(f'{x_name} and {y_name} corr is {stat_pearson[0]}')
+# =============================================================================
+#                                3. 绘制转录因子及靶基因网络图
+# =============================================================================
+plt.plot()
+plt.figure(figsize=(10 ,12))
+"""读取转录因子互作结果表"""
+tf_target_gene = pd.read_csv('TFBSTools.txt', sep='\t')
 
-edge_df = pd.concat(corr_df)
+tf_target_pair = tf_target_gene.query('TF.str.contains("WRKY|MYB|bZIP|NAC|ERF|AP2")')
+tf_target_pair.to_csv('TF_target_mRNA.txt',sep='\t',index=False)
 
+target_pair = tf_target_pair.filter(items=['seqnames', 'TF', 'relScore'])
 
-# ============= 3. 绘制转录因子及靶基因网络图 ==================
+"""由于一个基因的不同位点会和转录因子结合，因此去除重复项"""
+target_pair.drop_duplicates(subset=['seqnames', 'TF'], inplace=True)
+target_pair = target_pair[:100]
 
-# 创建网络图对象
-G = nx.DiGraph()
+"""创建网络图对象 """
+G = nx.Graph()
 
-# 添加节点和边
-for m in range(edge_df.shape[0]):
-    source = edge_df.iloc[m,:][0]
-    target = edge_df.iloc[m,:][1]
-    weight = edge_df.iloc[m,:][2]
-    G.add_edge(source, target, weight = weight)
+""" 为网络图添加edge """
+for source, target, score in target_pair.apply(zip, axis=1):
+    source_node = source[0]
+    target_node = target[0]
+    edge_score = score[0]
+    G.add_edge(source_node, target_node, weight = edge_score)
+    G.nodes[source_node]['type'] = 'type1'
+    G.nodes[target_node]['type'] = 'type2'
 
-# 提取权重
+""" 获取不同类型的节点 """
+type1_nodes = [n for n, d in G.nodes(data=True) if d['type'] == 'type1']
+type2_nodes = [n for n, d in G.nodes(data=True) if d['type'] == 'type2']
+
+""" 提取权重 """
 weights = np.array([G[u][v]['weight'] for u,v in G.edges()])
 
-# 定义边的颜色（根据权重）
+""" 定义边的颜色 """
 # edge_colors = ['red' if w > 0.5 else 'blue' for w in weights]
 
-# 使用Viridis渐变色
+""" 使用Viridis渐变色 """
 cmap = plt.cm.viridis
 norm = plt.Normalize(vmin=weights.min(), vmax=weights.max())
 edge_colors = cmap(norm(weights))
 
-# 绘制图
-pos = nx.spring_layout(G)
-nx.draw(G, pos, with_labels=True, node_size=700, node_color= 'skyblue', font_size=10, edge_color = edge_colors)
-# edge_labels = nx.get_edge_attributes(G, 'weight')
-# nx.draw_networkx_edge_labels(G, pos)
-
-# 添加颜色图例
+"""添加颜色图例"""
 sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
-plt.colorbar(sm, label="Edge Correaltion")
+plt.colorbar(sm, label="Edge Correaltion", ax=plt.gca())
+
+""" spring_layout函数会根据Fruchterman-Reingold force-directed算法为节点分配位置 """
+pos = nx.spring_layout(G)
+
+""" 绘制不同类型的节点 """
+nx.draw_networkx_nodes(G, pos, nodelist=type1_nodes, node_shape='o', 
+                       node_color='#fca491', node_size=150, label='mRNA')
 
 
-# ======== 4. 水杨酸和茉莉酸的GSEA分析 ==========
-# 读取数据
-ath_gene2go = pd.read_csv('ath_gene2go.txt', sep='\t', header=None)
-ath_gene2go.columns = ['species', 'gene_id', 'go_id', 'go_term']
+nx.draw_networkx_nodes(G, pos, nodelist=type2_nodes, node_shape='s', 
+                       node_color='#91f6fc', node_size=150, label='TF')
 
-ath_gene2name = pd.read_csv('ath_gene2name.txt', sep='\t', header=None)
-ath_gene2name.columns = ['gene_id', 'gene_name']
+""" 为节点添加标签 """
+nx.draw_networkx_labels(G, pos, labels={n: n for n in G}, font_size=5)
 
-# 将GO数据与基因名字的数据合并
-go_term_add_gene_name = pd.merge(ath_gene2go, ath_gene2name, on='gene_id')
+""" 绘制edge, 并根据权重绘制边的颜色 """
+nx.draw_networkx_edges(G, pos, edge_color = edge_colors)
 
-# 筛选相关通路制作成GMT文件
-# 以水杨酸为例，首先筛选出水杨酸相关通路，然后制作成GMT文件(可按照go_id groupby)
+plt.legend()
 
-def conduct_gmt(key_word):
-    salicylic_acid = go_term_add_gene_name.query('go_term.str.contains(@key_word)')
+plt.savefig('TF_mRNA_network.png')
+
+# =============================================================================
+#                                4. GSEA分析
+# =============================================================================
+"""
+导入gmt.py
+"""
+def conduct_gmt(species, key_word):
+    ath_gene2go = pd.read_csv('%s_gene2go.txt'%species, sep='\t', header=None)
+    ath_gene2go.columns = ['species', 'gene_id', 'go_id', 'go_term']
+
+    ath_gene2name = pd.read_csv('%s_gene2name.txt'%species, sep='\t', header=None)
+    ath_gene2name.columns = ['gene_id', 'gene_name']
+
+    # 将GO数据与基因名字的数据合并
+    go_term_add_gene_name = pd.merge(ath_gene2go, ath_gene2name, on='gene_id')
+
+    # 提取
+    hormone_acid = go_term_add_gene_name.query('go_term.str.contains(@key_word)')
 
     # 按照go_id分组
-    salicylic_acid_gp = salicylic_acid.groupby('go_term')
+    hormone_acid_gp = hormone_acid.groupby('go_term')
 
-    # 制作gmt文件
-    output = open('%s_acid.gmt'%key_word, 'a')
-    for group_id, group_result in salicylic_acid_gp:
-        result = [group_id] + ['NA']
-        result.extend(list(group_result['gene_name']))
-        output.write('\t'.join(result) + '\n')
-    output.close()
+    # 制作gmt文件并导出
+    gmt = {group_id: list(group_result['gene_name']) for group_id, group_result in hormone_acid_gp}
+    
+    return gmt
 
-conduct_gmt('salicylic')
-conduct_gmt('jasmonic')
+gmt_file = {}
+salicylic_gmt = conduct_gmt(species, 'salicylic')
+jasmonic_gmt = conduct_gmt(species, 'jasmonic')
+gmt_file.update(salicylic_gmt)
+gmt_file.update(jasmonic_gmt)
+
 """
+GSEA富集分析
+"""
+
+gene_exp = diff_exp.filter(regex= 'gene_name|gene_id|FPKM.')
+gene_exp.columns = gene_exp.columns.str.replace('FPKM.', '')
+
+
+sample_list = list(gene_exp)[2:] # 表达谱中的样本
+sample_info = pd.read_csv('sample_info.txt', sep='\t')
+sample_info = sample_info.query('SampleID==@sample_list')
+
+class_vector = list(sample_info['COND1'])
+
+# 第一列必须是gene_name
+gsea_data = gene_exp.loc[:, ['gene_name', 'gene_id'] + sample_list]
+
+gs = GSEA(data=gsea_data,
+         gene_sets= gmt_file,
+         classes = class_vector, # cls=class_vector
+         # set permutation_type to phenotype if samples >=15
+         permutation_type='phenotype',
+         permutation_num=1000, # reduce number to speed up test
+         outdir=None,
+         method='signal_to_noise',
+         threads=4, seed= 8)
+
+res = []
+for x in class_vector:
+    if x not in res:
+        res.append(x)
+
+gs.pheno_pos = res[0]
+gs.pheno_neg = res[1]
+gs.run()
+
+# 绘制折线图，同时将前5个通路绘制到一张图上
+terms = gs.res2d.Term
+axs = gs.plot(terms[:5], show_ranking=False, legend_kws={'loc': (1.05, 0)}, )
+plt.savefig('gsea_line_graph.png')
+
+
+# 绘制Lead_genes热图
+i = 2
+genes = gs.res2d.Lead_genes[i].split(";")
+# Make sure that ``ofname`` is not None, if you want to save your figure to disk
+ax = heatmap(df = gs.heatmat.loc[genes], z_score=0, title=terms[i], figsize=(14,4), ofname='heatmap')
+plt.savefig('lead_gene_heatmap.png')
+
 
 
