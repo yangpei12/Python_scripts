@@ -399,3 +399,15 @@ elif itemType == 'lncRNA_circRNA':
 elif itemType == 'circRNA':
     class CircRNA_Check(RefRNA_Check):
         pass
+
+# 路径判断
+
+sample_path = os.path.exists(r'{0}/sample_info.txt'.format(itemPath))
+project_info_path = os.path.exists(r'{0}/project_info/04_report.txt'.format(itemPath))
+clean_data_path = os.path.exists('{0}/{1}/{2}/{2}_delete_adapter.summary'.format(itemPath,'CleanData', sample))
+sampleCor_path = os.path.exists('{0}/Output/merged_result/correlation_cluster.txt'.format(itemPath))
+dataStat_path = os.path.exists('{0}/Output/stat_out.txt'.format(itemPath))
+mappedStat_path = os.path.exists('{0}/Output/mapped_stat_out.txt'.format(itemPath))
+mappedRegion_path = '{0}/Output/mapped_region_stat.txt'.format(itemPath)
+strandStat_path = os.path.exists('Output/{0}/RSeQC_result/{0}_Strand_specific.log'.format(sample))
+marcb_path = os.path.exists('CleanData/{0}/{0}_bowtie_abundance_1.log'.format(sample))
