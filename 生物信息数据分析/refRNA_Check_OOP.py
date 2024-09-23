@@ -1,11 +1,19 @@
 import os
 import re
-import argparse
+import sys
 import subprocess
 import pandas as pd
 
 """
-构造函数中 创建sample_info的信息、路径信息
+命令行参数1: 工作路径
+命令行参数2: 产品类型
+"""
+argvs = sys.argv
+itemPath = '/Users/yangpei/YangPei/after_sale/test/refRNA'
+#projectType = argvs[2]
+
+"""
+构造函数创建sample_info的信息、路径信息
 函数1：文库信息
 函数2：客户姓名信息
 函数3：短片段和接头比例
@@ -142,18 +150,19 @@ class Ref_Rna_Check:
 
 
 if __name__ == '__main__':
-    ref_rna_check = Ref_Rna_Check(r'/mnt/d/售后/test')
+    ref_rna_check = Ref_Rna_Check(itemPath=itemPath)
+    sample = ref_rna_check.sample_info.iloc[0,0]
 
     """输出文库信息"""
     libInfo = ref_rna_check.read_library()
-    if os.path.exists(r'Output/merged_result/correlation_cluster.txt') and not libInfo.empty:
+    if os.path.exists(r'{0}/sample_info.txt'.format(itemPath)) and not libInfo.empty:
         libInfo = libInfo.iloc[:,[0,2]]    
     else:
         libInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '文库名称': None})
         
     """客户姓名"""
     customerName = ref_rna_check.read_customer_name()
-    if os.path.exists(r'Output/merged_result/correlation_cluster.txt') and not customerName.empty:
+    if os.path.exists(r'{0}/project_info/04_report.txt'.format(itemPath)) and not customerName.empty:
         customerInfo = customerName 
     else:
         customerInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '姓名': None})
@@ -163,25 +172,26 @@ if __name__ == '__main__':
     cleanDataInfoResult = samples.map(ref_rna_check.read_short_read)
     cleanDataStat = pd.concat(cleanDataInfoResult.values)
 
-    if os.path.exists(r'Output/merged_result/correlation_cluster.txt') and not cleanDataStat.empty:
+    if os.path.exists('{0}/{1}/{2}/{2}_delete_adapter.summary'.format(itemPath,'CleanData', sample)) and not cleanDataStat.empty:
         cleanDataStatInfo = cleanDataStat 
     else:
         cleanDataStatInfo = pd.DataFrame({'Sample':  ref_rna_check.sample_info.iloc[:,0], 'Read1WithAdapter': None,
                                  'Read2WithAdapter': None, 'PairsThatWereTooShort': None})
+    
     """样本相关性"""
     groups = ref_rna_check.sample_info.iloc[:,1].unique()
     sampleCorResult = pd.Series(groups).map(ref_rna_check.sampleCor)
     CorrelationData = pd.concat(sampleCorResult.values)
     CorrelationData['Sample'] = CorrelationData.index
 
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not CorrelationData.empty:
+    if os.path.exists('{0}/Output/merged_result/correlation_cluster.txt'.format(itemPath)) and not CorrelationData.empty:
         CorrelationInfo = CorrelationData 
     else:
-        CorrelationData = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'CorrelationOfSample': None})
+        CorrelationInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'CorrelationOfSample': None})
 
     """样本数据量统计"""
     dataStat = ref_rna_check.stat_out()
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not dataStat.empty:
+    if os.path.exists('{0}/Output/stat_out.txt'.format(itemPath)) and not dataStat.empty:
         dataStatInfo = dataStat 
     else:
         dataStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'RawData': None, 'CleanData': None,
@@ -189,7 +199,7 @@ if __name__ == '__main__':
 
     """基因组比对统计"""
     mappedStat = ref_rna_check.mapped_stat()
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not mappedStat.empty:
+    if os.path.exists('{0}/Output/mapped_stat_out.txt'.format(itemPath)) and not mappedStat.empty:
         mappedStatInfo = mappedStat 
     else:
         mappedStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'Mappedreads': None, 
@@ -197,21 +207,21 @@ if __name__ == '__main__':
     
     """基因组比对区域统计"""
     mappedRegionStat = ref_rna_check.mapped_region()
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not mappedRegionStat.empty:
+    if os.path.exists('{0}/Output/mapped_region_stat.txt'.format(itemPath)) and not mappedRegionStat.empty:
         mappedRegionInfo = mappedRegionStat 
     else:
         mappedRegionInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'exon': None, 'intron': None, 'intergenic': None})
 
     """链特异性"""
     strandStat = ref_rna_check.strand_info()
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not strandStat.empty:
+    if os.path.exists('Output/{0}/RSeQC_result/{0}_Strand_specific.log'.format(sample)) and not strandStat.empty:
         strandStatInfo = strandStat 
     else:
         strandStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0],'链特异性': None})
 
     """核糖体占比"""
     marcbStat = ref_rna_check.marcb_info()
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not marcbStat.empty:
+    if os.path.exists('CleanData/{0}/{0}_bowtie_abundance_1.log'.format(sample)) and not marcbStat.empty:
         marcbStatInfo = marcbStat 
     else:
         marcbStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0],'marcbRatio': None})
@@ -221,22 +231,22 @@ if __name__ == '__main__':
 
     if os.path.exists('Output/merged_result/correlation_cluster.txt') and not itemStat:
         itemInfo = itemStat[0]
-        itemNumberInfo = itemStat[1]
     else:
         itemStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '项目编号': None, '项目路径': None})
 
 
-    allDataOut = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0]})
-
-    """
-    # 提取输出文件编号
+    """文件输出"""
     pattern = r'(LC-P|USA-)[0-9]+(-[0-9]){0,1}(_LC-P[0-9]+){0,1}_[0-9]+'
     itemNumbers = re.search(pattern, ref_rna_check.itemPath).group()
     output_name = '{0}/{1}_data_stat.txt'.format(args.outDir, itemNumbers)
     xlsx_name = '{0}/{1}_data_stat.xlsx'.format(args.outDir, itemNumbers)
-    for tmp in [libInfo, cleanDataStat, CorrelationData, dataStatInfo,
-                mappedStatInfo, mappedRegionInfo, strandStatInfo, marcbStatInfo, customerInfo, itemStatInfo]:
+
+
+    allDataOut = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0]})
+
+    for tmp in [libInfo, cleanDataStatInfo, CorrelationInfo, dataStatInfo, mappedStatInfo,
+                mappedRegionInfo, strandStatInfo, marcbStatInfo, customerInfo, itemInfo]:
         allDataOut = pd.merge(allDataOut, tmp, on='Sample')
     allDataOut.to_csv(output_name, sep='\t', index=False)
     allDataOut.to_excel(xlsx_name, index=False, engine='openpyxl')
-    """
+
