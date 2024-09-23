@@ -1,16 +1,32 @@
 import os
 import re
 import sys
+import argparse
 import subprocess
 import pandas as pd
 
 """
 命令行参数1: 工作路径
 命令行参数2: 产品类型
+
 """
-argvs = sys.argv
-itemPath = '/Users/yangpei/YangPei/after_sale/test/refRNA'
-#projectType = argvs[2]
+# ========================== 创建命令行参数 =========================
+# 初始化argparse对象
+parser = argparse.ArgumentParser(
+                    prog='DataCheck',
+                    description='This Program Is Checking Data Quality',
+                    epilog='Text at the bottom of help')
+# 创建实例对象
+parser.add_argument('workDir', help='please provide a work path')  # 工作路径
+parser.add_argument('itemType', help='please provide this project type')  # 工作路径
+parser.add_argument('--outDir', default=os.getcwd(), help='please provide a path for output')  # 结果文件输出路径
+
+# 解析参数
+args = parser.parse_args()
+
+# 导出参数
+itemPath = args.workDir
+itemType = args.itemType
 
 """
 构造函数创建sample_info的信息、路径信息
@@ -26,7 +42,7 @@ itemPath = '/Users/yangpei/YangPei/after_sale/test/refRNA'
 函数10：读取项目号及路径
 """
 
-class Ref_Rna_Check:
+class RefRNA_Check:
     def __init__(self, itemPath):
         self.itemPath = itemPath
         self.sample_info =  pd.read_csv(r'{0}/sample_info.txt'.format(self.itemPath),sep='\t').drop_duplicates()
@@ -149,104 +165,237 @@ class Ref_Rna_Check:
 
 
 
-if __name__ == '__main__':
-    ref_rna_check = Ref_Rna_Check(itemPath=itemPath)
-    sample = ref_rna_check.sample_info.iloc[0,0]
+if itemType == 'refRNA' or itemType == 'lncRNA':
+    os.chdir(itemPath)
+    RefRNA_Check = RefRNA_Check(itemPath=itemPath)
+    sample = RefRNA_Check.sample_info.iloc[0,0]
 
     """输出文库信息"""
-    libInfo = ref_rna_check.read_library()
+    libInfo = RefRNA_Check.read_library()
     if os.path.exists(r'{0}/sample_info.txt'.format(itemPath)) and not libInfo.empty:
         libInfo = libInfo.iloc[:,[0,2]]    
     else:
-        libInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '文库名称': None})
+        libInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], '文库名称': None})
         
     """客户姓名"""
-    customerName = ref_rna_check.read_customer_name()
+    customerName = RefRNA_Check.read_customer_name()
     if os.path.exists(r'{0}/project_info/04_report.txt'.format(itemPath)) and not customerName.empty:
         customerInfo = customerName 
     else:
-        customerInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '姓名': None})
+        customerInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], '姓名': None})
 
     """短片段比例"""
-    samples = ref_rna_check.sample_info.iloc[:,0]
-    cleanDataInfoResult = samples.map(ref_rna_check.read_short_read)
+    samples = RefRNA_Check.sample_info.iloc[:,0]
+    cleanDataInfoResult = samples.map(RefRNA_Check.read_short_read)
     cleanDataStat = pd.concat(cleanDataInfoResult.values)
 
     if os.path.exists('{0}/{1}/{2}/{2}_delete_adapter.summary'.format(itemPath,'CleanData', sample)) and not cleanDataStat.empty:
         cleanDataStatInfo = cleanDataStat 
     else:
-        cleanDataStatInfo = pd.DataFrame({'Sample':  ref_rna_check.sample_info.iloc[:,0], 'Read1WithAdapter': None,
+        cleanDataStatInfo = pd.DataFrame({'Sample':  RefRNA_Check.sample_info.iloc[:,0], 'Read1WithAdapter': None,
                                  'Read2WithAdapter': None, 'PairsThatWereTooShort': None})
     
     """样本相关性"""
-    groups = ref_rna_check.sample_info.iloc[:,1].unique()
-    sampleCorResult = pd.Series(groups).map(ref_rna_check.sampleCor)
+    groups = RefRNA_Check.sample_info.iloc[:,1].unique()
+    sampleCorResult = pd.Series(groups).map(RefRNA_Check.sampleCor)
     CorrelationData = pd.concat(sampleCorResult.values)
     CorrelationData['Sample'] = CorrelationData.index
 
     if os.path.exists('{0}/Output/merged_result/correlation_cluster.txt'.format(itemPath)) and not CorrelationData.empty:
         CorrelationInfo = CorrelationData 
     else:
-        CorrelationInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'CorrelationOfSample': None})
+        CorrelationInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], 'CorrelationOfSample': None})
 
     """样本数据量统计"""
-    dataStat = ref_rna_check.stat_out()
+    dataStat = RefRNA_Check.stat_out()
     if os.path.exists('{0}/Output/stat_out.txt'.format(itemPath)) and not dataStat.empty:
         dataStatInfo = dataStat 
     else:
-        dataStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'RawData': None, 'CleanData': None,
+        dataStatInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], 'RawData': None, 'CleanData': None,
                                     'Q20': None, 'Q30': None, 'GC': None})
 
     """基因组比对统计"""
-    mappedStat = ref_rna_check.mapped_stat()
+    mappedStat = RefRNA_Check.mapped_stat()
     if os.path.exists('{0}/Output/mapped_stat_out.txt'.format(itemPath)) and not mappedStat.empty:
         mappedStatInfo = mappedStat 
     else:
-        mappedStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'Mappedreads': None, 
+        mappedStatInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], 'Mappedreads': None, 
                                       'UniqueMappedreads': None, 'MultiMappedreads': None})
     
     """基因组比对区域统计"""
-    mappedRegionStat = ref_rna_check.mapped_region()
+    mappedRegionStat = RefRNA_Check.mapped_region()
     if os.path.exists('{0}/Output/mapped_region_stat.txt'.format(itemPath)) and not mappedRegionStat.empty:
         mappedRegionInfo = mappedRegionStat 
     else:
-        mappedRegionInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], 'exon': None, 'intron': None, 'intergenic': None})
+        mappedRegionInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], 'exon': None, 'intron': None, 'intergenic': None})
 
     """链特异性"""
-    strandStat = ref_rna_check.strand_info()
+    strandStat = RefRNA_Check.strand_info()
     if os.path.exists('Output/{0}/RSeQC_result/{0}_Strand_specific.log'.format(sample)) and not strandStat.empty:
         strandStatInfo = strandStat 
     else:
-        strandStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0],'链特异性': None})
+        strandStatInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0],'链特异性': None})
 
     """核糖体占比"""
-    marcbStat = ref_rna_check.marcb_info()
+    marcbStat = RefRNA_Check.marcb_info()
     if os.path.exists('CleanData/{0}/{0}_bowtie_abundance_1.log'.format(sample)) and not marcbStat.empty:
         marcbStatInfo = marcbStat 
     else:
-        marcbStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0],'marcbRatio': None})
+        marcbStatInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0],'marcbRatio': None})
 
     """项目信息"""
-    itemStat = ref_rna_check.item_info()
+    itemStat = RefRNA_Check.item_info()
 
-    if os.path.exists('Output/merged_result/correlation_cluster.txt') and not itemStat:
-        itemInfo = itemStat[0]
+    if os.path.exists('{0}/project_info/04_report.txt'.format(itemPath)) and not itemStat:
+        itemStatInfo = itemStat[0]
     else:
-        itemStatInfo = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0], '项目编号': None, '项目路径': None})
+        itemStatInfo = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0], '项目编号': None, '项目路径': None})
 
 
     """文件输出"""
     pattern = r'(LC-P|USA-)[0-9]+(-[0-9]){0,1}(_LC-P[0-9]+){0,1}_[0-9]+'
-    itemNumbers = re.search(pattern, ref_rna_check.itemPath).group()
+    itemNumbers = re.search(pattern, RefRNA_Check.itemPath).group()
     output_name = '{0}/{1}_data_stat.txt'.format(args.outDir, itemNumbers)
     xlsx_name = '{0}/{1}_data_stat.xlsx'.format(args.outDir, itemNumbers)
 
 
-    allDataOut = pd.DataFrame({'Sample': ref_rna_check.sample_info.iloc[:,0]})
+    allDataOut = pd.DataFrame({'Sample': RefRNA_Check.sample_info.iloc[:,0]})
 
     for tmp in [libInfo, cleanDataStatInfo, CorrelationInfo, dataStatInfo, mappedStatInfo,
-                mappedRegionInfo, strandStatInfo, marcbStatInfo, customerInfo, itemInfo]:
+                mappedRegionInfo, strandStatInfo, marcbStatInfo, customerInfo, itemStatInfo]:
         allDataOut = pd.merge(allDataOut, tmp, on='Sample')
     allDataOut.to_csv(output_name, sep='\t', index=False)
     allDataOut.to_excel(xlsx_name, index=False, engine='openpyxl')
 
+
+
+# lncRNA_CircRNA
+elif itemType == 'lncRNA_circRNA':
+    class LncRNA_Check(RefRNA_Check):
+        def __init__(self, itemPath):
+            RefRNA_Check.__init__(self, itemPath + '/lncRNA')
+        
+        def read_library(self):
+            samples = pd.read_csv(r'project_info/01_samples.txt',sep='\t').drop_duplicates()
+            projectInfo = samples.iloc[:, [1, 2]]
+            projectInfo.columns = ['文库名称', 'Sample']
+            self.libInfo = pd.merge(self.sample_info, projectInfo, on='Sample')
+            return self.libInfo
+            
+        def read_customer_name(self):
+            customer_info = pd.read_csv(r'project_info/04_report.txt',sep='\t',header=None)
+            customer_name = customer_info.iloc[0,1]
+            self.nameInfo = pd.DataFrame({'Sample': self.sample_info.iloc[:,0], '姓名': customer_name})
+            return self.nameInfo
+            
+        def item_info(self):
+            reportData = pd.read_csv('project_info/04_report.txt', sep='\t', header=None, index_col=0)
+            self.itemNum = reportData.loc['LCB_项目编号', 1]
+            self.itemInfo = pd.DataFrame({'Sample': self.sample_info.iloc[:,0], '项目编号': self.itemNum, '项目路径': self.itemPath})
+            return self.itemInfo, self.itemNum
+    
+    os.chdir(itemPath)
+    LncRNA_Check = LncRNA_Check(itemPath=itemPath)
+    sample = LncRNA_Check.sample_info.iloc[0,0]
+
+    """输出文库信息"""
+    libInfo = LncRNA_Check.read_library()
+    if os.path.exists(r'{0}/sample_info.txt'.format(itemPath)) and not libInfo.empty:
+        libInfo = libInfo.iloc[:,[0,2]]    
+    else:
+        libInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], '文库名称': None})
+        
+    """客户姓名"""
+    customerName = LncRNA_Check.read_customer_name()
+    if os.path.exists(r'{0}/project_info/04_report.txt'.format(itemPath)) and not customerName.empty:
+        customerInfo = customerName 
+    else:
+        customerInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], '姓名': None})
+
+    """短片段比例"""
+    samples = LncRNA_Check.sample_info.iloc[:,0]
+    cleanDataInfoResult = samples.map(LncRNA_Check.read_short_read)
+    cleanDataStat = pd.concat(cleanDataInfoResult.values)
+
+    if os.path.exists('{0}/{1}/{2}/{2}_delete_adapter.summary'.format(itemPath,'CleanData', sample)) and not cleanDataStat.empty:
+        cleanDataStatInfo = cleanDataStat 
+    else:
+        cleanDataStatInfo = pd.DataFrame({'Sample':  LncRNA_Check.sample_info.iloc[:,0], 'Read1WithAdapter': None,
+                                 'Read2WithAdapter': None, 'PairsThatWereTooShort': None})
+    
+    """样本相关性"""
+    groups = LncRNA_Check.sample_info.iloc[:,1].unique()
+    sampleCorResult = pd.Series(groups).map(LncRNA_Check.sampleCor)
+    CorrelationData = pd.concat(sampleCorResult.values)
+    CorrelationData['Sample'] = CorrelationData.index
+
+    if os.path.exists('{0}/Output/merged_result/correlation_cluster.txt'.format(itemPath)) and not CorrelationData.empty:
+        CorrelationInfo = CorrelationData 
+    else:
+        CorrelationInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], 'CorrelationOfSample': None})
+
+    """样本数据量统计"""
+    dataStat = LncRNA_Check.stat_out()
+    if os.path.exists('{0}/Output/stat_out.txt'.format(itemPath)) and not dataStat.empty:
+        dataStatInfo = dataStat 
+    else:
+        dataStatInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], 'RawData': None, 'CleanData': None,
+                                    'Q20': None, 'Q30': None, 'GC': None})
+
+    """基因组比对统计"""
+    mappedStat = LncRNA_Check.mapped_stat()
+    if os.path.exists('{0}/Output/mapped_stat_out.txt'.format(itemPath)) and not mappedStat.empty:
+        mappedStatInfo = mappedStat 
+    else:
+        mappedStatInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], 'Mappedreads': None, 
+                                      'UniqueMappedreads': None, 'MultiMappedreads': None})
+    
+    """基因组比对区域统计"""
+    mappedRegionStat = LncRNA_Check.mapped_region()
+    if os.path.exists('{0}/Output/mapped_region_stat.txt'.format(itemPath)) and not mappedRegionStat.empty:
+        mappedRegionInfo = mappedRegionStat 
+    else:
+        mappedRegionInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], 'exon': None, 'intron': None, 'intergenic': None})
+
+    """链特异性"""
+    strandStat = LncRNA_Check.strand_info()
+    if os.path.exists('Output/{0}/RSeQC_result/{0}_Strand_specific.log'.format(sample)) and not strandStat.empty:
+        strandStatInfo = strandStat 
+    else:
+        strandStatInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0],'链特异性': None})
+
+    """核糖体占比"""
+    marcbStat = LncRNA_Check.marcb_info()
+    if os.path.exists('CleanData/{0}/{0}_bowtie_abundance_1.log'.format(sample)) and not marcbStat.empty:
+        marcbStatInfo = marcbStat 
+    else:
+        marcbStatInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0],'marcbRatio': None})
+
+    """项目信息"""
+    itemStat = LncRNA_Check.item_info()
+
+    if os.path.exists('{0}/project_info/04_report.txt'.format(itemPath)) and not itemStat:
+        itemStatInfo = itemStat[0]
+    else:
+        itemStatInfo = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0], '项目编号': None, '项目路径': None})
+
+
+    """文件输出"""
+    pattern = r'(LC-P|USA-)[0-9]+(-[0-9]){0,1}(_LC-P[0-9]+){0,1}_[0-9]+'
+    itemNumbers = re.search(pattern, LncRNA_Check.itemPath).group()
+    output_name = '{0}/{1}_data_stat.txt'.format(args.outDir, itemNumbers)
+    xlsx_name = '{0}/{1}_data_stat.xlsx'.format(args.outDir, itemNumbers)
+
+
+    allDataOut = pd.DataFrame({'Sample': LncRNA_Check.sample_info.iloc[:,0]})
+
+    for tmp in [libInfo, cleanDataStatInfo, CorrelationInfo, dataStatInfo, mappedStatInfo,
+                mappedRegionInfo, strandStatInfo, marcbStatInfo, customerInfo, itemStatInfo]:
+        allDataOut = pd.merge(allDataOut, tmp, on='Sample')
+    allDataOut.to_csv(output_name, sep='\t', index=False)
+    allDataOut.to_excel(xlsx_name, index=False, engine='openpyxl')
+    
+#circRNA
+elif itemType == 'circRNA':
+    class CircRNA_Check(RefRNA_Check):
+        pass
