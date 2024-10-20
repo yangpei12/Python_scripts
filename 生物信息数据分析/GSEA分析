@@ -1,0 +1,55 @@
+import os
+import pandas as pd
+from gseapy import GSEA
+import matplotlib.pyplot as plt
+
+os.chdir('/mnt/d/售后/张兴')
+gene_exp = pd.read_excel('RawData/ACLF_GeneMatrix.xlsx')
+
+# 插入基因ID列
+gene_exp.insert(1, 'gene_id', gene_exp.index)
+
+# 构建比较组
+sample_info = pd.read_excel('RawData/COND.xlsx')
+class_vector = list(sample_info['COND1'])
+
+# 构建gmt文件
+gene_set_path = 'RawData/msigdb/c5.go.v2024.1.Hs.symbols.gmt'
+gmt_file = {fields[0]: fields[2:] for fields in (line.strip('\n').split('\t') for line in open(gene_set_path))}
+
+# 生成gsea对象
+gs = GSEA(data=gene_exp,
+         gene_sets= gmt_file,
+         classes = class_vector, # cls=class_vector
+         # set permutation_type to phenotype if samples >=15
+         permutation_type='phenotype',
+         permutation_num=1000, # reduce number to speed up test
+         outdir=None,
+         method='signal_to_noise',
+         threads=4, seed= 8)
+
+res = []
+for x in class_vector:
+    if x not in res:
+        res.append(x)
+
+gs.pheno_pos = res[0]
+gs.pheno_neg = res[1]
+
+# 运行
+gs.run()
+
+# 绘制折线图，同时将前5个通路绘制到一张图上
+terms = gs.res2d.Term
+selectItem = terms[terms.str.contains('AUTOPHAGY')]
+
+# 筛选感兴趣的通路，单独绘制图片
+for idx in selectItem.index:
+    gs.plot(selectItem[idx], show_ranking=True, legend_kws={'loc': (1.05, 0)}, )
+    plt.savefig('Output/Enrichment/GSEA/Gsea_enplot_%d.png'%idx, bbox_inches='tight')  # 保存为 PNG 格式
+    plt.close()  # 关闭图像，释放内存
+
+# 筛选感兴趣的通路，绘制在一起图片
+gs.plot(selectItem, show_ranking=True, legend_kws={'loc': (1.05, 0)}, )
+plt.savefig('Output/Enrichment/GSEA/Gsea_enplot_ALL.png', bbox_inches='tight')  # 保存为 PNG 格式
+plt.close()  # 关闭图像，释放内存
